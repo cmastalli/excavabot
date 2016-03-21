@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="excavaROB_laser_transmission" params="side">
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="${side}_support_pantilt_laser_trans">
+      <joint name="${side}_support_pantilt_laser_joint" />
+      <actuator name="${side}_support_pantilt_laser_motor" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+  </xacro:macro>
+</robot>

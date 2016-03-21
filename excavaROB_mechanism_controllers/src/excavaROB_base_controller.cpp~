@@ -1,0 +1,288 @@
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Simon Bolivar University.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
+/*
+ * Author: Carlos Mastalli
+ */
+
+#include <excavaROB_mechanism_controllers/excavaROB_base_controller.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_DECLARE_CLASS(excavaROB_mechanism_controllers, ExcavaROBBaseController, controller::ExcavaROBBaseController, pr2_controller_interface::Controller)
+
+namespace controller {
+
+  const static double EPS = 1e-5;
+
+ExcavaROBBaseController::ExcavaROBBaseController()
+{
+  //init variables
+  cmd_vel_.linear = 0;
+  cmd_vel_.angular = 0;
+
+  cmd_vel_t_.linear = 0;
+  cmd_vel_t_.angular = 0;
+
+  new_cmd_available_ = false;
+  last_publish_time_ = ros::Time(0.0);
+
+  pthread_mutex_init(&excavaROB_base_controller_lock_, NULL);
+}
+
+ExcavaROBBaseController::~ExcavaROBBaseController()
+{
+  cmd_sub_.shutdown();
+}
+
+
+
+void ExcavaROBBaseController::setCommand(const excavaROB_msgs::VelocityBase &cmd_vel)
+{
+  cmd_vel_t_.linear = filters::clamp(cmd_vel.linear, -max_translational_velocity_, max_translational_velocity_);
+  cmd_vel_t_.angular = filters::clamp(cmd_vel.angular, -max_rotational_velocity_, max_rotational_velocity_);
+
+  cmd_received_timestamp_ = base_kin_.robot_state_->getTime();
+  new_cmd_available_ = true;
+}
+
+void ExcavaROBBaseController::commandCallback(const excavaROB_msgs::VelocityBaseConstPtr& msg)
+{
+  pthread_mutex_lock(&excavaROB_base_controller_lock_);
+  base_vel_msg_ = *msg;
+  this->setCommand(base_vel_msg_);
+  pthread_mutex_unlock(&excavaROB_base_controller_lock_);
+}
+
+bool ExcavaROBBaseController::init(pr2_mechanism_model::RobotState *robot, ros::NodeHandle &node)
+{
+  if(!base_kin_.init(robot, node))
+  {
+    ROS_ERROR("Could not initialize the base kinematics");
+    return false;
+  }
+
+  node_ = node;
+  controller_state_publisher_.reset(new realtime_tools::RealtimePublisher<excavaROB_mechanism_controllers::BaseControllerState> (node, base_kin_.name_ + "/state", 1));
+
+  int num_joints = base_kin_.right_num_wheels_ + base_kin_.left_num_wheels_;
+  controller_state_publisher_->msg_.joint_names.resize(num_joints);
+
+  //Get params from param server
+  node_.param<double> ("max_translational_velocity", max_translational_velocity_, 0.5);
+  node_.param<double> ("max_rotational_velocity", max_rotational_velocity_, 1.0);
+  node_.param<double> ("max_translational_acceleration", max_accel_.linear, 1.0);
+  node_.param<double> ("max_rotational_acceleration", max_accel_.angular, 1.0);
+
+  node.param("odom/initial_x", odom_.x, 0.0);
+  node.param("odom/initial_y", odom_.y, 0.0);
+  node.param("odom/initial_yaw", odom_.z, 0.0);
+  node.param<double> ("track_distance", track_distance_, 2.2542373);
+
+  node_.param<double> ("timeout", timeout_, 1.0);
+  node_.param<double> ("state_publish_rate", state_publish_rate_, 2.0);
+  if(state_publish_rate_ <= 0.0)
+  {
+    publish_state_ = false;
+    state_publish_time_ = 0.0;
+  }
+  else
+  {
+    publish_state_ = true;
+    state_publish_time_ = 1.0/state_publish_rate_;
+  }
+
+  cmd_sub_ = node_.subscribe<excavaROB_msgs::VelocityBase>("command", 1, &ExcavaROBBaseController::commandCallback, this);
+
+  if(!pid_translational_.init(ros::NodeHandle(node_, "pid_translational")))
+  {
+    ROS_ERROR("Could not initialize pid translational");
+    return false;
+  }
+  if(!pid_rotational_.init(ros::NodeHandle(node_, "pid_rotational")))
+  {
+    ROS_ERROR("Could not initialize pid rotational");
+    return false;
+  }
+
+  for(int i = 0; i < base_kin_.right_num_wheels_; i++)
+  {
+    controller_state_publisher_->msg_.joint_names[i] = base_kin_.right_wheel_[i].joint_name_;
+    if(!base_kin_.right_wheel_[i].joint_->calibrated_)
+    {
+      ROS_ERROR("The base controller could not start beacause %s are not calibrated", base_kin_.right_wheel_[i].joint_name_.c_str());
+      return false;
+    }
+  }
+  for(int i = 0; i < base_kin_.left_num_wheels_; i++)
+  {
+    controller_state_publisher_->msg_.joint_names[i + base_kin_.right_num_wheels_] = base_kin_.left_wheel_[i].joint_name_;
+    if(!base_kin_.left_wheel_[i].joint_->calibrated_)
+    {
+      ROS_ERROR("The base controller could not start beacause %s are not calibrated", base_kin_.left_wheel_[i].joint_name_.c_str());
+      return false;
+    }
+  }
+
+  ROS_WARN("Right wheels: %s and %s", base_kin_.right_wheel_[0].joint_->joint_->name.c_str(), base_kin_.right_wheel_[1].joint_->joint_->name.c_str());
+  ROS_WARN("Left wheels: %s and %s", base_kin_.left_wheel_[0].joint_->joint_->name.c_str(), base_kin_.left_wheel_[1].joint_->joint_->name.c_str());
+  return true;
+}
+
+
+void ExcavaROBBaseController::starting()
+{
+  last_time_ = base_kin_.robot_state_->getTime();
+  current_time_ = base_kin_.robot_state_->getTime();
+  cmd_received_timestamp_ = base_kin_.robot_state_->getTime();
+
+  current_r_wheel_rotation_ = base_kin_.right_wheel_[0].joint_->position_;
+  current_l_wheel_rotation_ = base_kin_.left_wheel_[0].joint_->position_;
+  last_r_wheel_rotation_ = base_kin_.right_wheel_[0].joint_->position_;
+  last_l_wheel_rotation_ = base_kin_.left_wheel_[0].joint_->position_;
+
+  r_radius_ = base_kin_.right_wheel_[0].wheel_radius_;
+  l_radius_ = base_kin_.left_wheel_[0].wheel_radius_;
+}
+
+
+void ExcavaROBBaseController::updateOdometry()
+{
+  double dt = (current_time_ - last_time_).toSec();
+
+  current_r_wheel_rotation_ = base_kin_.right_wheel_[0].joint_->position_;
+  current_l_wheel_rotation_ = base_kin_.left_wheel_[0].joint_->position_;
+
+  double r_wheel_rotation_delta = current_r_wheel_rotation_ - last_r_wheel_rotation_;
+  double l_wheel_rotation_delta = current_l_wheel_rotation_ - last_l_wheel_rotation_;
+
+  double delta_theta = (r_radius_ * r_wheel_rotation_delta - l_radius_ * l_wheel_rotation_delta) / track_distance_;
+  double delta_s = (r_radius_ * r_wheel_rotation_delta + l_radius_ * l_wheel_rotation_delta) / 2;
+
+  if(delta_theta / dt < 0.001)
+  {
+    odom_delta_x_ = delta_s * cos(odom_.z + delta_theta / 2);
+    odom_delta_y_ = delta_s * sin(odom_.z + delta_theta / 2);
+    odom_delta_th_ = delta_theta;
+  }
+  else
+  {
+    odom_delta_x_ = (delta_s / delta_theta) * (sin(odom_.z + delta_theta) - sin(odom_.z));
+    odom_delta_y_ = -(delta_s / delta_theta) * (cos(odom_.z + delta_theta) - cos(odom_.z));
+    odom_delta_th_ = delta_theta;
+  }
+
+  odom_.x += odom_delta_x_;
+  odom_.y += odom_delta_y_;
+  odom_.z += odom_delta_th_;
+
+  odom_vel_.linear.x = odom_delta_x_ / dt;
+  odom_vel_.linear.y = odom_delta_y_ / dt;
+  odom_vel_.angular.z = odom_delta_th_ / dt;
+
+  vel_linear_ = delta_s / dt;
+
+  ROS_DEBUG("Odometry:: Position [x,y,theta]: %f, %f, %f", odom_.x, odom_.y, odom_.z);
+}
+
+void ExcavaROBBaseController::update()
+{
+  if(!initialized_)
+  {
+    initialized_ = true;
+    error_vel_.linear = 0.0;
+    error_vel_.angular = 0.0;
+  }
+  if(new_cmd_available_)
+    new_cmd_available_ = false;
+
+  if((current_time_ - cmd_received_timestamp_).toSec() > timeout_)
+  {
+    cmd_vel_t_.linear = 0.0;
+    cmd_vel_t_.angular = 0.0;
+  }
+  desired_vel_.linear = cmd_vel_t_.linear;
+  desired_vel_.angular = cmd_vel_t_.angular;
+
+  current_time_ = base_kin_.robot_state_->getTime();
+  ros::Duration dt = current_time_ - last_time_;
+
+  updateOdometry();
+  current_vel_.linear = vel_linear_; 
+  current_vel_.angular = odom_vel_.angular.z;
+
+  error_vel_.linear = desired_vel_.linear - current_vel_.linear;
+  error_vel_.angular = desired_vel_.angular - current_vel_.angular;
+
+  command_effort_translational_ = pid_translational_.updatePid(-error_vel_.linear, dt);
+  command_effort_rotational_ = pid_rotational_.updatePid(-error_vel_.angular, dt);// * track_distance_ / 2
+
+  for(int i = 0; i < base_kin_.right_num_wheels_-1; i++)
+  {
+    base_kin_.right_wheel_[i].joint_->commanded_effort_ = command_effort_translational_ + command_effort_rotational_;
+    base_kin_.left_wheel_[i].joint_->commanded_effort_ = command_effort_translational_ - command_effort_rotational_;
+  }
+
+  if(publish_state_)
+    publishStateController(current_time_);
+
+  last_time_ = current_time_;
+  last_r_wheel_rotation_ = current_r_wheel_rotation_;
+  last_l_wheel_rotation_ = current_l_wheel_rotation_;
+}
+
+void ExcavaROBBaseController::publishStateController(const ros::Time &time)
+{
+  if((time - last_publish_time_).toSec() < state_publish_time_)
+    return;
+
+  if(controller_state_publisher_->trylock())
+  {
+    controller_state_publisher_->msg_.header.stamp = time;
+
+    controller_state_publisher_->msg_.velocity_measured.linear = current_vel_.linear;
+    controller_state_publisher_->msg_.velocity_measured.angular = current_vel_.angular;
+
+    controller_state_publisher_->msg_.velocity_desired.linear = desired_vel_.linear;
+    controller_state_publisher_->msg_.velocity_desired.angular = desired_vel_.angular;
+
+    controller_state_publisher_->msg_.velocity_error.linear = error_vel_.linear;
+    controller_state_publisher_->msg_.velocity_error.angular = error_vel_.angular;
+
+    controller_state_publisher_->msg_.control_signal_right_wheel = command_effort_translational_ + command_effort_rotational_;
+    controller_state_publisher_->msg_.control_signal_left_wheel = command_effort_translational_ - command_effort_rotational_;
+  }
+  controller_state_publisher_->unlockAndPublish();
+  last_publish_time_ = time;
+}
+
+} // namespace controller

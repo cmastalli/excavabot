@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <!--============================== BED =================================-->
+  <!-- Bed Reference Systems with respect to World Refence Systems  -->
+  <property name="bed_cs_x" value="0" />
+  <property name="bed_cs_y" value="1.86038" /> <!-- 1.76518 -->
+  <property name="bed_cs_z" value="-3.74318" />
+  <!-- Bed Center of Gravity with respect to World Refence Systems  -->
+  <property name="bed_cg_x" value="0" />
+  <property name="bed_cg_y" value="1.860415" />
+  <property name="bed_cg_z" value="1.42984" />
+  <!-- Bed Center of Rotation with respect to World Refence Systems  -->
+  <property name="bed_cr_x" value="2.45375" />
+  <property name="bed_cr_y" value="1.25667" />
+  <property name="bed_cr_z" value="0" />
+
+
+  <xacro:macro name="dump_truck_bed" params="parent">
+    <!-- Bed-Body Joint -->
+    <joint name="bed_${parent}_joint" type="fixed">
+      <parent link="${parent}_link"/>
+      <child link="bed_link"/>
+      <origin rpy="0 ${-PI/2} 0" xyz="${bed_cr_x-body_cr_x}
+			              ${bed_cr_y-body_cr_y}
+			              ${bed_cr_z-body_cr_z}"/>
+    </joint>
+
+    <!-- Bed Link -->
+    <link name="bed_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="${bed_cs_x-bed_cr_z}
+				 ${bed_cs_y-bed_cr_y}
+				 ${bed_cs_z+bed_cr_x}"/>
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/bed/dump_bed.dae"/>
+	</geometry>
+	<material name="Grey"/>
+      </visual>
+      <inertial>
+	<mass value="2591.6"/>
+	<origin rpy="0 0 0" xyz="${bed_cg_x-bed_cr_z}
+				 ${bed_cg_y-bed_cr_y}
+				 ${bed_cg_z+bed_cr_x}"/>
+	<inertia ixx="19530.7" ixy="0"    ixz="0"
+		 iyy="20172.8" iyz="4484" izz="4019.2"/>
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="${bed_cs_x-bed_cr_z}
+				 ${bed_cs_y-bed_cr_y}
+				 ${bed_cs_z+bed_cr_x}"/>
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/bed/dump_bed.stl"/>
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="bed_link">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+  </xacro:macro>
+</robot>

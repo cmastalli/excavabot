@@ -1,0 +1,37 @@
+analyzers:
+  joints:
+    type: GenericAnalyzer
+    path: Joints
+    startswith: [
+      'Joint']
+    expected: [
+      'Joint (base_footprint_joint)',
+      'Joint (drivetrain_right_front_wheel_joint)',
+      'Joint (drivetrain_left_front_wheel_joint)',
+      'Joint (drivetrain_right_drive_wheel_joint)',
+      'Joint (drivetrain_left_drive_wheel_joint)',
+      'Joint (drivetrain_right_drivetrack_joint)',
+      'Joint (drivetrain_left_drivetrack_joint)',
+      'Joint (turret_drivetrain_joint)',
+      'Joint (topcompartment_turret_joint)',
+      'Joint (chimmey_turret_joint)',
+      'Joint (support_stereo_camera_turret_joint)',
+      'Joint (support_right_laser_turret_joint)',
+      'Joint (support_left_laser_turret_joint)',
+      'Joint (boom_turret_joint)',
+      'Joint (stick_boom_joint)',
+      'Joint (bucket_stick_joint)',
+      'Joint (pantilt_stereo_camera_support_stereo_camera_joint)',
+      'Joint (camera_case_pantilt_stereo_camera_joint)',
+      'Joint (right_lent_case_stereo_camera_joint)',
+      'Joint (left_lent_case_stereo_camera_joint)',
+      'Joint (right_stereo_camera_frame_case_stereo_camera_link_joint)',
+      'Joint (pantilt_laser_support_right_laser_joint)',
+      'Joint (right_support_pantilt_laser_joint)',
+      'Joint (right_hokuyo_laser_support_joint)',
+      'Joint (right_hokuyo_laser_scan_point_joint)',
+      'Joint (pantilt_laser_support_left_laser_joint)',
+      'Joint (left_support_pantilt_laser_joint)',
+      'Joint (left_hokuyo_laser_support_joint)',
+      'Joint (left_hokuyo_laser_scan_point_joint)']
+    

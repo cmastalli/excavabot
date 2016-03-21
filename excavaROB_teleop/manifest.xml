@@ -1,0 +1,20 @@
+<package>
+  <description brief="excavaROB_teleop">
+  This package contains launch files for starting keyboard-based
+  teleoperation (remote control) of the excavaROB.
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+
+  <depend package="roscpp" />
+  <depend package="excavaROB_msgs"/>
+
+  <url>http://ros.org/wiki/excavaROB_teleop</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+
+</package>
+
+

@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+       sensor and controller plugin specifications -->
+  <include filename="$(find excavaROB_description)/urdf/arm/arm.transmission.xacro" />
+
+  <!--========================== BOOM ===============================-->
+  <!-- Boom Reference Systems with respect to World Refence Systems -->
+  <property name="boom_cs_x" value="0.624078" />
+  <property name="boom_cs_y" value="-0.40005" />
+  <property name="boom_cs_z" value="1.45669" /> <!-- 0.624078,1.45669,0.40005 -->
+  <!-- Boom Center of Gravity with respect to World Refence Systems -->
+  <property name="boom_cg_x" value="2.33954" />
+  <property name="boom_cg_y" value="-0.40005" />
+  <property name="boom_cg_z" value="2.31997" /> <!-- 2.33954,2.31997,0.40005 -->
+  <!-- Boom-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="boom_turret_cr_x" value="0.624078" />
+  <property name="boom_turret_cr_y" value="-0.84455" />
+  <property name="boom_turret_cr_z" value="1.45669" /> <!-- 0.624078,1.45669,0.84455 -->
+  <!-- Boom Initial Position (Degree) -->
+  <property name="boom_posO" value="0" />
+
+  <!--========================== STICK ===============================-->
+  <!-- Stick Reference Systems with respect to World Refence Systems -->
+  <property name="stick_cs_x" value="5.61371" />
+  <property name="stick_cs_y" value="-0.40005" />
+  <property name="stick_cs_z" value="2.61897" /> <!-- 5.61371,2.61897,0.40005 -->
+  <!-- Stick Center of Gravity with respect to World Refence Systems -->
+  <property name="stick_cg_x" value="6.32469" />
+  <property name="stick_cg_y" value="-0.400047" />
+  <property name="stick_cg_z" value="2.77572" /> <!-- 6.32469,2.77572,0.400047 -->
+  <!-- Stick-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="stick_boom_cr_x" value="5.61371" />
+  <property name="stick_boom_cr_y" value="-0.40005" />
+  <property name="stick_boom_cr_z" value="2.61897" /> <!-- 5.61371,2.61897,0.40005 -->
+  <!-- Stick Initial Position (Degree) -->
+  <property name="stick_posO" value="-65" />
+
+
+  <xacro:macro name="excavaROB_arm" params="parent">
+  <!-- Boom Turret Joint -->
+	<joint name="boom_${parent}_joint" type="revolute">
+		<parent link="${parent}_link" />
+		<child link="boom_link" />
+		<axis xyz="0 -1 0" />
+		<origin rpy="0 ${-boom_posO*PI/180} 0" xyz="${boom_turret_cr_x-turret_drivetrain_cr_x}
+					      	    	    ${boom_turret_cr_y-turret_drivetrain_cr_y}
+					 	    	    ${boom_turret_cr_z-turret_drivetrain_cr_z}" />
+		<limit effort="700000.0" lower="${-(25+boom_posO)*PI/180}" upper="${(40-boom_posO)*PI/180}" velocity="0.5" /><!-- AJUSTAR -->
+		<!--<safety_controller k_position="200" k_velocity="40" soft_upper_limit="${(40-boom_posO)*PI/180 - 0.10}" 
+								    soft_lower_limit="${-(25+boom_posO)*PI/180 + 0.10}" />-->
+		<dynamics damping="1" friction="100" />
+		<calibration falling="${0}" />
+	</joint>
+  <!-- Stick Boom Joint -->
+	<joint name="stick_boom_joint" type="revolute">
+		<parent link="boom_link" />
+		<child link="stick_link" />
+		<axis xyz="0 -1 0" />
+		<origin rpy="0 ${-stick_posO*PI/180} 0" xyz="${stick_boom_cr_x-boom_turret_cr_x}
+					 		     ${stick_boom_cr_y-boom_turret_cr_y}
+					 		     ${stick_boom_cr_z-boom_turret_cr_z}" />
+		<limit effort="500000.0" lower="${(10+stick_posO)*PI/180}" upper="${(100+stick_posO)*PI/180}" velocity="0.5" /><!-- AJUSTAR -->
+		<!--<safety_controller k_position="20" k_velocity="4" soft_upper_limit="${(100-stick_posO)*PI/180 - 0.10}" 
+								  soft_lower_limit="${(10+stick_posO)*PI/180 + 0.10}" />-->
+		<dynamics damping="1" friction="100" />
+		<calibration falling="${0}" />
+	</joint>
+
+  <!-- Boom Link -->
+	<link name="boom_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${boom_cs_x-boom_turret_cr_x} 
+			       			 ${boom_cs_y-boom_turret_cr_y}
+			      			 ${boom_cs_z-boom_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/arm/boom.dae" scale="100 100 100"/>
+			</geometry>
+			<material name="Yellow" />
+		</visual>
+		<inertial>
+			<mass value="4293.53" /><!--"4293.53/1502.74"-->
+			<origin rpy="0 0 0" xyz="${boom_cg_x-boom_turret_cr_x} 
+			       			 ${boom_cg_y-boom_turret_cr_y}
+			      			 ${boom_cg_z-boom_turret_cr_z}" />
+			<inertia ixx="1864.01" ixy="-2757.04" ixz="-0.00129397"
+				 iyy="10579.2" iyz="0.000393182" izz="11704.6" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${boom_cs_x-boom_turret_cr_x} 
+			       			 ${boom_cs_y-boom_turret_cr_y}
+			      			 ${boom_cs_z-boom_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/arm/boom.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="boom_link">
+		<material>Gazebo/Yellow</material>
+	</gazebo>
+  <!-- Stick Link -->
+	<link name="stick_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${stick_cs_x-stick_boom_cr_x} 
+			       			 ${stick_cs_y-stick_boom_cr_y}
+			      			 ${stick_cs_z-stick_boom_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/arm/stick.dae"/>
+			</geometry>
+			<material name="Yellow" />
+		</visual>
+		<inertial>
+			<mass value="1151.17" /><!--"1151.17/402.91"-->
+			<origin rpy="0 0 0" xyz="${stick_cg_x-stick_boom_cr_x} 
+			       			 ${stick_cg_y-stick_boom_cr_y}
+			      			 ${stick_cg_z-stick_boom_cr_z}" />
+			<inertia ixx="93.0186" ixy="73.9671" ixz="0.00163464"
+				 iyy="884.759" iyz="-3.67163e-005" izz="921.02" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${stick_cs_x-stick_boom_cr_x} 
+			       			 ${stick_cs_y-stick_boom_cr_y}
+			      			 ${stick_cs_z-stick_boom_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/arm/stick.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="stick_link">
+		<material>Gazebo/Yellow</material>
+	</gazebo>
+
+    <xacro:excavaROB_arm_transmission parent="${parent}" />
+  </xacro:macro>
+
+</robot>

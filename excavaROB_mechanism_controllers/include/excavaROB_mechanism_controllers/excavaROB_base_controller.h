@@ -1,0 +1,283 @@
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Simon Bolivar University.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
+/*
+ * Author: Carlos Mastalli
+ */
+
+#ifndef JOINT_BASE_CONTROLLER_H__
+#define JOINT_BASE_CONTROLLER_H__ 
+
+#include <ros/node_handle.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <pr2_controller_interface/controller.h>
+
+#include <excavaROB_mechanism_controllers/base_kinematics.h>
+#include <control_toolbox/pid.h>
+#include <control_toolbox/filters.h>
+
+#include <excavaROB_mechanism_controllers/BaseControllerState.h>
+#include <excavaROB_msgs/VelocityBase.h>
+#include <geometry_msgs/Twist.h>
+
+#include <boost/scoped_ptr.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+
+//#include <boost/shared_ptr.hpp>
+//#include <boost/thread/condition.hpp>
+
+namespace controller
+{
+
+  /*! \class
+  \brief This class inherits from Controller and implements the actual controls
+  */
+  class ExcavaROBBaseController: public pr2_controller_interface::Controller
+  {
+    public:
+    /*!
+    * \brief Default Constructor of the ExcavaROBBaseController class
+    */
+    ExcavaROBBaseController();
+
+    /*!
+    * \brief Default Destructor of the ExcavaROBBaseController class
+    */
+    ~ExcavaROBBaseController();
+
+    /*!
+    * \brief Initializes and loads base controller information from the param server
+    * @param robot_state The robot's current state
+    * @param config Tiny xml element pointing to this controller
+    * @return Succesfull init
+    */
+    bool init(pr2_mechanism_model::RobotState *robot, ros::NodeHandle &node);
+
+    /*!
+    * \brief The starting method is called by the realtime thread just before the first call to update. Overrides Controller.starting()
+    * @return Succesful start
+    */
+    void starting();
+
+    /*!
+    * \brief The update method is called by the realtime thread after the call of starting. This method updates commands to wheels and it's called wvery timestep in realtime
+    */
+    void update();
+
+    /*!
+    * \brief Class where the robot's information is computed and stored
+    * @return BaseKinematics instance that is being used by this controller
+    */
+    BaseKinematics base_kin_;
+
+
+    /*!
+    * \brief Mutex lock for setting and getting commands
+    */
+    pthread_mutex_t excavaROB_base_controller_lock_;
+
+    /*!
+    * \brief Current speed command vector and speed command vector with acceleration limits imposed
+    */
+    excavaROB_msgs::VelocityBase cmd_vel_, cmd_vel_t_;
+
+    /*!
+    * \brief Desired linear and angular velocity
+    */
+    excavaROB_msgs::VelocityBase desired_vel_;
+
+    /*!
+    * \brief Current linear and angular velocity
+    */
+    excavaROB_msgs::VelocityBase current_vel_;
+
+    /*!
+    * \brief Timeout specifying time that the controller waits before setting the current velocity command to zero
+    */
+    double timeout_;
+
+    /*!
+    * \brief True if we have a new command available
+    */
+    bool new_cmd_available_;
+
+
+
+
+    private:
+
+    /*!
+    * \brief commandCallback function that deal with twist commands
+    * @param msg Message of the base command velocity 
+    */
+    void commandCallback(const excavaROB_msgs::VelocityBaseConstPtr& msg);
+
+    /*!
+    * \brief setCommand function that deal with twist commands
+    * @param cmd_vel Command velocity
+    */
+    void setCommand(const excavaROB_msgs::VelocityBase &cmd_vel);
+
+    /*!
+    * \brief publishStateController function publish the state of the base controller
+    * @param time Current time
+    */
+    void publishStateController(const ros::Time &time);
+
+    /*!
+    * \brief updateOdometry function update the position and velocity of the base
+    */
+    void updateOdometry();
+
+
+
+    /*!
+    * \brief Nodehandle
+    */
+    ros::NodeHandle node_;
+
+    /*!
+    * \brief Subcritor of the command speed
+    */
+    ros::Subscriber cmd_sub_;
+
+    /*!
+    * \brief Publishes information about base controller
+    */
+    boost::scoped_ptr<realtime_tools::RealtimePublisher <excavaROB_mechanism_controllers::BaseControllerState> > controller_state_publisher_;
+
+    /*!
+    * \brief PID translational and rotational controller
+    */
+    control_toolbox::Pid pid_translational_, pid_rotational_;
+
+    /*!
+    * \brief Current and last time
+    */
+    ros::Time current_time_, last_time_;
+
+    /*!
+    * \brief Last publish time
+    */
+    ros::Time last_publish_time_;
+
+    /*!
+    * \brief Timestamp corresponding to when the command received by the node
+    */
+    ros::Time cmd_received_timestamp_;
+
+    /*!
+    * \brief True when controller state if published
+    */
+    bool publish_state_;
+
+    /*!
+    * \brief True when the controllers have been initialized
+    */
+    bool initialized_;
+
+    /*!
+    * \brief Base velocity message
+    */
+    excavaROB_msgs::VelocityBase base_vel_msg_;
+
+    /*!
+    * \brief Position of base's robot
+    */
+    geometry_msgs::Point odom_; 
+
+    /*!
+    * \brief Velocity of base's robot
+    */
+    geometry_msgs::Twist odom_vel_;
+
+    /*!
+    * \brief Delta odometry
+    */
+    double odom_delta_x_, odom_delta_y_, odom_delta_th_;
+
+    /*!
+    * \brief Error linear and angular velocity
+    */
+    excavaROB_msgs::VelocityBase error_vel_;
+
+    /*!
+    * \brief Maximun accelaration of base
+    */
+    excavaROB_msgs::VelocityBase max_accel_;
+
+    /*!
+    * \brief Base linear velocity
+    */
+    double vel_linear_;
+
+    /*!
+    * \brief Maximun translational and rotational velocity of the base's robot
+    */
+    double max_translational_velocity_, max_rotational_velocity_;
+
+    /*!
+    * \brief Rate and period of the state controller message is published
+    */
+    double state_publish_rate_, state_publish_time_;
+
+    /*!
+    * \brief Command effort of translational and rotational controller
+    */
+    double command_effort_translational_, command_effort_rotational_;
+
+    /*!
+    * \brief The current time the rotation of the wheels was published
+    */
+    double current_r_wheel_rotation_, current_l_wheel_rotation_;
+
+    /*!
+    * \brief The last time the rotation of the wheels was published
+    */
+    double last_r_wheel_rotation_, last_l_wheel_rotation_;
+
+    /*!
+    * \brief Radius of the right and left wheel
+    */
+    double r_radius_, l_radius_;
+
+    /*!
+    * \brief Distance between the two tracks
+    */
+    double track_distance_;
+
+  }; // class ExcavaROBBaseController
+
+} // namespace controller
+#endif  // JOINT_BASE_CONTROLLER_H__

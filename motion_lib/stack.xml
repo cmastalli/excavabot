@@ -1,0 +1,9 @@
+<stack>
+  <description brief="motion_lib">motion_lib</description>
+  <author>Maintained by Carlos Mastalli</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/motion_lib</url>
+  <depend stack="ros" />
+
+</stack>

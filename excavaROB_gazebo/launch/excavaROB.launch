@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- Startup excavaROB without any mechanism controllers -->
+  <include file="$(find excavaROB_gazebo)/launch/excavaROB_no_controllers.launch" />
+
+  <!-- Load and Start Default Controllers -->
+  <include file="$(find excavaROB_controller_configuration)/launch/excavaROB_default_controllers.launch" />
+
+</launch>

@@ -1,0 +1,10 @@
+<launch>
+
+  <node pkg="motion_record" type="joint_state_record" name="excavaROB_joint_state_record" output="screen">
+    <param name="root_link" value="drivetrain_link" />
+    <param name="tip_link" value="bucket_link" />
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/joint_states/"/>
+    <param name="motion_name" value="truck_loading"/>
+  </node>
+
+</launch>

@@ -1,0 +1,25 @@
+<package>
+  <description brief="truck_detector">
+
+     truck_detector
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/truck_detector</url>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="truck_msgs"/>
+  <depend package="excavaROB_truck_common"/>
+  <depend package="ANN_doors"/>
+
+
+ <export>
+    <cpp cflags="-I${prefix}/include" />
+ </export>
+</package>
+
+

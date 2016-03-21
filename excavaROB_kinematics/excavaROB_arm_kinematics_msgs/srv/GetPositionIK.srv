@@ -1,0 +1,24 @@
+# A service definition for a standard inverse kinematics service
+Header header
+
+string ik_link_name
+
+# Position and velocity that we wish to computed the inverse kinematics
+excavaROB_msgs/Pose pose
+geometry_msgs/Twist velocity
+
+# A JointState consisting of hint/seed positions for the IK computation. 
+sensor_msgs/JointState ik_seed_state
+
+# Maximum allowed time for IK calculation
+duration ik_timeout
+
+---
+
+# The resultant vector of PoseStamped messages that contains the (stamped) poses of the requested links
+sensor_msgs/JointState ik_solution
+
+# Arm navigation error codes
+#motion_planning_msg/ArmNavigationErrorCodes error_code
+
+

@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<robot name="excavaROB"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro" >
+  
+  <!-- The following included files set up definitions of parts of the robot body -->
+  <!-- excavaROB Drive: drivetrain, frontwheels, drivewheels and drivetracks  -->
+  <include filename="$(find excavaROB_description)/urdf/drive/drive.urdf.xacro" />
+  <!-- excavaROB Turret: turret, topcompartment, chimmey, laser supports and stereo camera support -->
+  <include filename="$(find excavaROB_description)/urdf/turret/turret.urdf.xacro" />
+  <!-- excavaROB Arm: boom and stick -->
+  <include filename="$(find excavaROB_description)/urdf/arm/arm.urdf.xacro" />
+  <!-- excavaROB Bucket: bucket -->
+  <include filename="$(find excavaROB_description)/urdf/bucket/bucket.urdf.xacro" />
+  <!-- Wge100 Stereo Camera: stereo camera -->
+  <include filename="$(find excavaROB_description)/urdf/sensors/stereo_camera/stereo_camera.urdf.xacro" />
+  <!-- Hokuyo Laser Rangefinder: right and left laser rangefinder -->
+  <include filename="$(find excavaROB_description)/urdf/sensors/laser_rangefinder/laser_rangefinder.urdf.xacro" />
+  <!-- Materials for visualization -->
+  <include filename="$(find excavaROB_description)/urdf/materials.urdf.xacro" />
+  <!-- Generic simulator_gazebo plugins for starting mechanism control -->
+  <include filename="$(find excavaROB_description)/gazebo/gazebo.urdf.xacro" />
+
+  <!-- Now we can start using the macros included above to define the actual excavaROB -->
+
+  <!-- The first use of a macro.  This one was defined in base.urdf.xacro above.
+       A macro like this will expand to a set of link and joint definitions, and to additional
+       Gazebo-related extensions (sensor plugins, etc).  The macro takes an argument, name, 
+       that equals "base", and uses it to generate names for its component links and joints 
+       (e.g., base_link).  The included origin block is also an argument to the macro.  By convention, 
+       the origin block defines where the component is w.r.t its parent (in this case the parent 
+       is the world frame). For more, see http://www.ros.org/wiki/xacro -->
+
+  <!-- Body -->
+  <!-- excavaROB Drivetrain -->
+  <xacro:excavaROB_drive name="base"/>
+  <!-- excavaROB Turret and Components -->
+  <xacro:excavaROB_turret parent="drivetrain"/>
+  <!-- excavaROB Arm -->
+  <xacro:excavaROB_arm parent="turret"/>
+  <!-- excavaROB Bucket -->
+  <xacro:excavaROB_bucket parent="stick"/>
+
+  <!-- Sensors -->
+  <!-- Stereo Camera -->
+  <xacro:excavaROB_stereo_camera parent="support_stereo_camera" focal_length="320" hfov="90" image_format="BAYER_BGGR8" image_width="640" image_height="480"/>
+  <!-- Right Laser Rangefinder -->
+  <xacro:excavaROB_laser_rangefinder parent="support_right_laser" side="right">
+    <origin rpy="0 0 0" xyz="-0.07275 -0.078 0.01"/> <!-- -0.07275,0.01,0.078 -->
+  </xacro:excavaROB_laser_rangefinder>
+  <!-- Left Laser Rangefinder -->
+  <xacro:excavaROB_laser_rangefinder parent="support_left_laser" side="left">
+    <origin rpy="0 0 0" xyz="-0.07275 -0.078 0.01"/> <!-- -0.07275 0.01 0.078 -->
+  </xacro:excavaROB_laser_rangefinder>
+
+</robot>

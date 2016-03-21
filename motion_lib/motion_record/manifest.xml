@@ -1,0 +1,27 @@
+<package>
+  <description brief="motion_record">
+
+     motion_record
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/motion_record</url>
+
+  <depend package="roscpp" />
+  <depend package="urdf"/>
+  <depend package="kdl" />
+  <depend package="kdl_parser"/>
+  <depend package="tf_conversions" />
+  <depend package="tf" />
+
+  <depend package="sensor_msgs" />
+  <depend package="dmp_controller" />
+  <depend package="excavaROB_mechanism_controllers" />
+  <depend package="nav_msgs" />
+<!--  <depend package="geometry_msgs" /> -->
+
+</package>
+
+

@@ -1,0 +1,6 @@
+<launch>
+
+  <include file="$(find excavaROB_machine)/$(env ROBOT).machine" />  
+  <include file="$(find excavaROB_arm_navigation_filtering)/launch/trajectory_filter.launch"/>
+
+</launch>

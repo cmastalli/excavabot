@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <xacro:macro name="dump_truck_wheel_gazebo" params="side type">
+    <gazebo reference="${side}_${type}_wheel_link">
+      <mu1 value="0.025" /><!--100/50000-->
+      <mu2 value="0.025" /><!--100/50000-->
+      <kp  value="1e13" /><!--"1000000/1e13-->
+      <kd  value="5e9" /><!--1/5e9-->
+    </gazebo>
+  </xacro:macro>
+
+</robot>

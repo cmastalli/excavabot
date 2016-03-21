@@ -1,0 +1,12 @@
+<launch>
+        
+    <node pkg="excavaROB_teleop" type="teleop_keyboard" name="spawn_teleop_keyboard" output="screen">
+      <remap from="cmd_vel" to="base_controller/command" />
+      <param name="low_vel_linear" value="0.5" />
+      <param name="high_vel_linear" value="1.0" />
+      <param name="low_vel_angular" value="0.5" />
+      <param name="high_vel_angular" value="1.0" />
+    </node>
+
+</launch>
+

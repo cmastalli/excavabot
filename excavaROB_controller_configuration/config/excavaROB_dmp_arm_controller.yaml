@@ -1,0 +1,20 @@
+dmp_arm_controller:
+  type: "dmp_controller/InverseKinematicsController"
+
+  joints:
+    - turret_drivetrain_joint
+    - boom_turret_joint
+    - stick_boom_joint
+    - bucket_stick_joint
+
+  gains:
+    turret_drivetrain_joint: {p: 802500.0, d: 1295000.0, i: 54000.0, i_clamp: 84000.0}
+    boom_turret_joint: {p: 782500.0, d: 845000.0, i: 555000.0, i_clamp: 580000.0}
+    stick_boom_joint: {p: 582500.0, d: 685000.0, i: 455000.0, i_clamp: 402000.0}
+    bucket_stick_joint: {p: 372500.0, d: 365000.0, i: 55000.0, i_clamp: 166000.0}
+
+  root_name: drivetrain_link
+  tip_name: bucket_link
+  damping_factor: 0.1
+  k_ik: 600
+

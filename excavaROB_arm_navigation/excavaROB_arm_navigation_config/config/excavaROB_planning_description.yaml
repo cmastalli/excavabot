@@ -1,0 +1,120 @@
+# Definining multi-degree of freedom joints.  We require that a
+# multi-dof transform exist with a child frame that is the base
+# frame of the robot
+multi_dof_joints:
+  - name: world_joint
+    type: Floating
+    parent_frame_id: odom_combined
+    child_frame_id: base_footprint
+
+## the definition of each group
+groups:
+  - name: robot_body
+    links:
+      drivetrain_link
+      right_drive_wheel_link
+      left_drive_wheel_link
+      right_front_wheel_link
+      left_front_wheel_link
+
+  - name: arm
+    base_link: drivetrain_link
+    tip_link: bucket_link
+
+#  - name: end_effector
+#    joints:
+#      - turret_drivetrain-joint
+#      - boom_turret_joint
+#      - stick_boom_joint
+#      - bucket_stick_joint
+
+
+# The default padding to assign to agent links for the purposes
+# of environmental collision checking
+default_robot_padding: .02
+
+# The default padding to assign to collision objects and attached
+# collision objects for the purposes of filtering them from the
+# collision map
+default_object_padding: .03
+
+distance_collision_operations:
+  - object1: robot_body
+    object2: arm
+    operation: enable
+
+  # disable for self, non-intra group collisions
+  - object1: right_drive_wheel_link
+    object2: drivetrain_link
+    operation: disable
+
+  - object1: left_drive_wheel_link
+    object2: drivetrain_link
+    operation: disable
+
+  - object1: right_front_wheel_link
+    object2: drivetrain_link
+    operation: disable
+
+  - object1: left_front_wheel_link
+    object2: drivetrain_link
+    operation: disable
+
+  - object1: drivetrain_link
+    object2: turret_link
+    operation: disable
+
+  - object1: turret_link
+    object2: boom_link
+    operation: disable
+
+  - object1: boom_link
+    object2: stick_link
+    operation: disable
+
+  - object1: stick_link
+    object2: bucket_link
+    operation: disable
+
+    
+
+
+
+#This must contain all pairs of links that have intersecting meshes to
+#get an accurate collision checking result.  It can optionally contain
+#all pairs of meshes that cannot possibly be in contact with each
+#other in the robot's normal operation.  Including the most
+#comprehensive possible list will improve collision checking speed
+#default_collision_operations:
+#  - object1: base_footprint
+#    object2: base_link
+#    operation: disable  # Adjacent in collision
+#  - object1: base_link
+#    object2: base_bellow_link
+#    operation: disable  # Adjacent in collision
+#  - object1: base_link
+#    object2: base_laser_link
+#    operation: disable  # Adjacent in collision
+#  - object1: base_link
+#    object2: bl_caster_rotation_link
+#    operation: disable  # Adjacent in collision
+#  - object1: bl_caster_rotation_link
+#    object2: bl_caster_l_wheel_link
+#    operation: disable  # Adjacent in collision
+#  - object1: bl_caster_rotation_link
+#    object2: bl_caster_r_wheel_link
+#    operation: disable  # Adjacent in collision
+#  - object1: base_link
+#    object2: br_caster_rotation_link
+#    operation: disable  # Adjacent in collision
+#  - object1: br_caster_rotation_link
+#    object2: br_caster_l_wheel_link
+#    operation: disable  # Adjacent in collision
+#  - object1: br_caster_rotation_link
+#    object2: br_caster_r_wheel_link
+#    operation: disable  # Adjacent in collision
+#  - object1: base_link
+#    object2: fl_caster_rotation_link
+#    operation: disable  # Adjacent in collision
+
+

@@ -1,0 +1,272 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Stereo Camera Macro uses wge100_camera macros -->
+  <include filename="$(find excavaROB_description)/urdf/sensors/stereo_camera/wge100_camera.urdf.xacro" />
+  <include filename="$(find excavaROB_description)/urdf/sensors/stereo_camera/stereo_camera.gazebo.xacro" />
+  <include filename="$(find excavaROB_description)/urdf/sensors/stereo_camera/stereo_camera.transmission.xacro" />
+
+
+  <!--========================== PANTILT ===============================-->
+  <!-- PanTilt Reference Systems with respect to his Joint Refence Systems -->
+  <property name="pantilt_stereo_camera_joint_cs_x" value="-0.03"/>
+  <property name="pantilt_stereo_camera_joint_cs_y" value="0.07655"/>
+  <property name="pantilt_stereo_camera_joint_cs_z" value="-0.05625"/> <!-- -0.03,-0.05625,-0.07655 -->
+  <!-- PanTilt Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="pantilt_stereo_camera_joint_cg_x" value="-0.03"/>
+  <property name="pantilt_stereo_camera_joint_cg_y" value="0.07655"/>
+  <property name="pantilt_stereo_camera_joint_cg_z" value="-0.02009"/> <!-- -0.03,-0.02009,-0.07655 -->
+  <!-- PanTilt-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="pantilt_stereo_camera_support_cr_x" value="1.28"/>
+  <property name="pantilt_stereo_camera_support_cr_y" value="0.701325"/>
+  <property name="pantilt_stereo_camera_support_cr_z" value="3.12995"/> <!-- 1.28,3.12995,-0.701325 -->
+
+  <!--========================== CASE ===============================-->
+  <!-- Case Reference Systems with respect to his Joint Refence Systems -->
+  <property name="case_stereo_camera_joint_cs_x" value="-0.021552"/>
+  <property name="case_stereo_camera_joint_cs_y" value="0"/>
+  <property name="case_stereo_camera_joint_cs_z" value="-0.047999"/> <!-- -0.021552,-0.047999,0 -->
+  <!-- Case Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="case_stereo_camera_joint_cg_x" value="0.0001976"/>
+  <property name="case_stereo_camera_joint_cg_y" value="0"/>
+  <property name="case_stereo_camera_joint_cg_z" value="-0.0454834"/> <!-- 0.0001976,-0.0454834,0 -->
+  <!-- Case-PanTilt Center of Rotation with respect to his Joint Refence Systems -->
+  <property name="case_stereo_camera_cr_x" value="-0.03"/>
+  <property name="case_stereo_camera_cr_y" value="0.07655"/>
+  <property name="case_stereo_camera_cr_z" value="-0.055"/> <!-- -0.03,-0.055,-0.07655 -->
+
+  <!--========================== RIGHT LENT ===============================-->
+  <!-- Right Lent Reference Systems with respect to his Joint Refence Systems -->
+  <property name="right_lent_joint_cs_x" value="-0.0421"/>
+  <property name="right_lent_joint_cs_y" value="-0.1875"/>
+  <property name="right_lent_joint_cs_z" value="-0.025"/> <!-- -0.0421,-0.025,0.1875 -->
+  <!-- Right Lent Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="right_lent_joint_cg_x" value="-0.02562"/>
+  <property name="right_lent_joint_cg_y" value="-0.187432"/>
+  <property name="right_lent_joint_cg_z" value="-0.02481"/> <!-- -0.02562,-0.02481,0.187432 -->
+  <!-- Right Lent-Case Center of Rotation with respect to his Joint Refence Systems -->
+  <property name="right_lent_case_stereo_camera_cr_x" value="0.02155"/>
+  <property name="right_lent_case_stereo_camera_cr_y" value="0.1125"/>
+  <property name="right_lent_case_stereo_camera_cr_z" value="-0.023"/> <!-- 0.02155,-0.023,-0.1125 -->
+
+  <!--========================== LEFT LENT ===============================-->
+  <!-- Left Lent Reference Systems with respect to his Joint Refence Systems -->
+  <property name="left_lent_joint_cs_x" value="-0.0421"/>
+  <property name="left_lent_joint_cs_y" value="-0.0375"/>
+  <property name="left_lent_joint_cs_z" value="-0.025"/> <!-- -0.0421,-0.025,0.1875 -->
+  <!-- Left Lent Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="left_lent_joint_cg_x" value="-0.02562"/>
+  <property name="left_lent_joint_cg_y" value="-0.037432"/>
+  <property name="left_lent_joint_cg_z" value="-0.02481"/> <!-- -0.02562,-0.02481,0.187432 -->
+  <!-- Left Lent-Case Center of Rotation with respect to his Joint Refence Systems -->
+  <property name="left_lent_case_stereo_camera_cr_x" value="0.02155"/>
+  <property name="left_lent_case_stereo_camera_cr_y" value="0.1125"/>
+  <property name="left_lent_case_stereo_camera_cr_z" value="-0.023"/> <!-- 0.02155,-0.023,-0.1125 -->
+
+
+
+  <!-- This macro is used for creating stereo camera links -->
+  <xacro:macro name="excavaROB_stereo_camera" params="parent focal_length hfov image_format image_width image_height">
+  <!-- PanTiltCamera SupportStereoCamera Joint -->
+	<joint name="pantilt_stereo_camera_${parent}_joint" type="fixed">
+		<parent link="${parent}_link" />
+		<child link="pantilt_stereo_camera_link" />
+		<axis xyz="0 1 0" />
+		<origin rpy="0 0 0" xyz="${pantilt_stereo_camera_support_cr_x-support_stereo_camera_turret_cr_x}
+					 ${pantilt_stereo_camera_support_cr_y-support_stereo_camera_turret_cr_y}
+					 ${pantilt_stereo_camera_support_cr_z-support_stereo_camera_turret_cr_z}" />
+	</joint>
+  <!-- CameraCase PanTiltCamera Joint -->
+	<joint name="camera_case_pantilt_stereo_camera_joint" type="revolute">
+		<parent link="pantilt_stereo_camera_link" />
+		<child link="case_stereo_camera_link" />
+		<axis xyz="0 1 0"/>
+		<origin rpy="0 0 0" xyz="${case_stereo_camera_cr_x}
+					 ${case_stereo_camera_cr_y}
+					 ${case_stereo_camera_cr_z}" />
+		<limit effort="10.0" lower="${-PI/4}" upper="${PI/4}" velocity="0.1" /><!-- AJUSTAR -->
+		<!--<safety_controller k_position="200" k_velocity="40" soft_upper_limit="${(40-boom_posO)*PI/180 - 0.10}" 
+								    soft_lower_limit="${-(25+boom_posO)*PI/180 + 0.10}" />-->
+		<dynamics damping="1" friction="10" />
+		<calibration falling="${0}" />
+	</joint>
+  <!-- RightLent CameraCase Joint -->
+	<joint name="right_lent_case_stereo_camera_joint" type="fixed">
+		<parent link="case_stereo_camera_link" />
+		<child link="right_lent_link" />
+		<axis xyz="0 0 1" />
+		<origin rpy="0 0 0" xyz="${right_lent_case_stereo_camera_cr_x}
+					 ${right_lent_case_stereo_camera_cr_y}
+					 ${right_lent_case_stereo_camera_cr_z}" />
+	</joint>
+  <!-- LeftLent CameraCase Joint -->
+	<joint name="left_lent_case_stereo_camera_joint" type="fixed">
+		<parent link="case_stereo_camera_link" />
+		<child link="left_lent_link" />
+		<axis xyz="0 0 1" />
+		<origin rpy="0 0 0" xyz="${left_lent_case_stereo_camera_cr_x}
+					 ${left_lent_case_stereo_camera_cr_y}
+					 ${left_lent_case_stereo_camera_cr_z}" />
+	</joint>
+
+  <!-- StereoCameraPanTiltSupport Link -->
+	<link name="pantilt_stereo_camera_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${pantilt_stereo_camera_joint_cs_x} 
+			       			 ${pantilt_stereo_camera_joint_cs_y}
+			      			 ${pantilt_stereo_camera_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/pantilt_support.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="0.1399" />
+			<origin rpy="0 0 0" xyz="${pantilt_stereo_camera_joint_cg_x} 
+			       			 ${pantilt_stereo_camera_joint_cg_y}
+			      			 ${pantilt_stereo_camera_joint_cg_z}" />
+			<inertia ixx="0.00030" ixy="0" ixz="0"
+				 iyy="0.00026" iyz="0" izz="0.0001" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${pantilt_stereo_camera_joint_cs_x} 
+			       			 ${pantilt_stereo_camera_joint_cs_y}
+			      			 ${pantilt_stereo_camera_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/pantilt_support.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="pantilt_stereo_camera_link">
+		<material>Gazebo/White</material>
+	</gazebo>
+  <!-- StereoCameraCase Link -->
+	<link name="case_stereo_camera_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${case_stereo_camera_joint_cs_x} 
+			       			 ${case_stereo_camera_joint_cs_y}
+			      			 ${case_stereo_camera_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/camera_case.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="0.4288" />
+			<origin rpy="0 0 0" xyz="${case_stereo_camera_joint_cg_x} 
+			       			 ${case_stereo_camera_joint_cg_y}
+			      			 ${case_stereo_camera_joint_cg_z}" />
+			<inertia ixx="0.0018" ixy="0" ixz="0"
+				 iyy="0.0017" iyz="0" izz="0.0002" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${case_stereo_camera_joint_cs_x} 
+			       			 ${case_stereo_camera_joint_cs_y}
+			      			 ${case_stereo_camera_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/camera_case.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="case_stereo_camera_link">
+		<material>Gazebo/White</material>
+	</gazebo>
+  <!-- RightLent Link -->
+	<link name="right_lent_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${right_lent_joint_cs_x} 
+			       			 ${right_lent_joint_cs_y}
+			      			 ${right_lent_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/lent.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="0.0271" />
+			<origin rpy="0 0 0" xyz="${right_lent_joint_cg_x} 
+			       			 ${right_lent_joint_cg_y}
+			      			 ${right_lent_joint_cg_z}" />
+			<inertia ixx="0.000004" ixy="0" ixz="0"
+				 iyy="0.000005" iyz="0" izz="0.000005" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${right_lent_joint_cs_x} 
+			       			 ${right_lent_joint_cs_y}
+			      			 ${right_lent_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/lent.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="right_lent_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+  <!-- LeftLent Link -->
+	<link name="left_lent_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${left_lent_joint_cs_x} 
+			       			 ${left_lent_joint_cs_y}
+			      			 ${left_lent_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/lent.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="0.0271" />
+			<origin rpy="0 0 0" xyz="${left_lent_joint_cg_x} 
+			       			 ${left_lent_joint_cg_y}
+			      			 ${left_lent_joint_cg_z}" />
+			<inertia ixx="0.000004" ixy="0" ixz="0"
+				 iyy="0.000005" iyz="0" izz="0.000005" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${left_lent_joint_cs_x} 
+			       			 ${left_lent_joint_cs_y}
+			      			 ${left_lent_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/stereo_camera/lent.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="left_lent_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+
+    <!-- attach optical frame to the camera link -->
+	<joint name="optical_frame_joint" type="fixed">
+		<parent link="case_stereo_camera_link" />
+		<child link="optical_frame" />
+		<origin xyz="0.02155 0.075 -0.048" rpy="${-PI/2} 0 ${-PI/2}" /> <!-- rotate frame from x-forward to z-forward camera coords -->
+	</joint> <!-- REVISAR CON RVIZ -->
+
+    <!-- optical frame for the stereo camera, with z-forward notation, this is the frame stereo camera images users should refer to -->
+	<link name="optical_frame" /><!--type="camera"/>-->
+
+
+    <!-- Stereo Left Camera -->
+    <xacro:wge100_camera name="left_stereo_camera" side="left" camera_name="stereo_camera/left" image_format="${image_format}" 
+			 image_topic_name="image_raw" camera_info_topic_name="camera_info" parent="case_stereo_camera_link"
+                         hfov="${hfov}" focal_length="${focal_length}" frame_id="optical_frame" hack_baseline="0"
+                         image_width="${image_width}" image_height="${image_height}">
+		<origin xyz="0.02155 0.075 -0.048" rpy="0 0 0" />
+    </xacro:wge100_camera>
+
+    <!-- Stereo Right Camera -->
+    <xacro:wge100_camera name="right_stereo_camera" side="right" camera_name="stereo_camera/right" image_format="${image_format}" 
+			 image_topic_name="image_raw" camera_info_topic_name="camera_info" parent="case_stereo_camera_link"
+                         hfov="${hfov}" focal_length="${focal_length}" frame_id="optical_frame" hack_baseline="0.15"
+                         image_width="${image_width}" image_height="${image_height}">
+		<origin xyz="0.02155 -0.075 -0.048" rpy="0 0 0" /> <!-- dy=0.15m -->
+    </xacro:wge100_camera>
+
+    <!-- Stereo camera transmission -->
+    <xacro:excavaROB_stereo_camera_transmission />
+  </xacro:macro>
+
+</robot>

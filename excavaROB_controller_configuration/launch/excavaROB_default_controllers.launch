@@ -1,0 +1,19 @@
+<launch>
+
+
+  <!-- excavaROB odometry localization -->
+  <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_odometry.yaml" command="load" />
+  <!-- excavaROB base controller -->
+  <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_base_controller.yaml" command="load" />
+  <!-- excavaROB laser rangenFinder controller: right and left laser -->
+  <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_laser_tilt_controller.yaml" command="load" />
+  <!-- excavaROB DMP arm controller: turret, boom, stick and bucket -->
+  <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_$(env ARM_CONTROLLER).yaml" command="load" />
+
+  <!-- controllers that come up started -->
+  <node name="$(env ARM_CONTROLLER)_spawner" pkg="pr2_controller_manager" type="spawner"
+	output="screen" args="--wait-for=/calibrated $(env ARM_CONTROLLER) right_laser_tilt_controller
+			      left_laser_tilt_controller" /><!-- base_odometry base_controller -->
+
+
+</launch>

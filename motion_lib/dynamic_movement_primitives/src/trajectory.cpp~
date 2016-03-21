@@ -1,0 +1,247 @@
+
+// local include
+#include <dynamic_movement_primitives/trajectory.h>
+
+#include <fstream>
+
+// import most common Eigen types
+using namespace Eigen;
+
+namespace dmp
+{
+
+Trajectory::Trajectory() : 
+    initialized_(false), trajectory_length_(0), trajectory_dimension_(0), 
+    time_duration_(0.0)
+{
+}
+
+Trajectory::~Trajectory()
+{
+    position_names_.clear();
+    velocity_names_.clear();
+    acceleration_names_.clear();
+}
+
+
+bool Trajectory::initialize(ros::NodeHandle& node_handle)
+{
+    if (initialized_)
+        ROS_WARN("Trajectory already initialized. Reinitializing with new parameters.");
+
+    ros::NodeHandle nh(node_handle, "trajectory");
+    if (!nh.getParam("path_name", path_name_)) {
+        ROS_FATAL("Could not found path_name from parameter server");
+        initialized_ = false;
+        return initialized_;
+    }
+    if (!nh.getParam("file_name", file_name_)) {
+        ROS_FATAL("Could not found file_name from parameter server");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    initialized_ = true;
+    return initialized_;
+}
+
+
+bool Trajectory::initFromMessage(const dynamic_movement_primitives::Trajectory& traj_msg)
+{
+    initialized_ = traj_msg.initialized;
+    time_duration_ = traj_msg.time_duration;
+    trajectory_length_ = traj_msg.length;
+
+    return true;
+}
+
+
+bool Trajectory::readFromFile()
+{
+    std::string file_path = path_name_ + file_name_;
+
+    std::ifstream infile;
+    infile.open(file_path.c_str());
+    if (!infile) {
+        ROS_FATAL("Could not open the file %s", file_path.c_str());
+        return false;
+    }
+    int num_rows = 0;
+    int num_cols = 0;
+    std::string line;
+
+    getline(infile, line);
+
+    // get the numbers of columns
+    for (unsigned int i = 0; i < line.size(); i++) {
+        if (line[i] == '\t')
+            num_cols++;
+    }
+    num_cols++;
+    // get the numbers of rows
+    while (!infile.eof()) {
+        getline(infile, line);
+        num_rows++;;
+    }
+    num_rows--;
+    infile.close();
+
+    // set trajectory parameters
+    trajectory_dimension_ = (num_cols - 1) / POS_VEL_ACC;
+    trajectory_length_ = num_rows;
+
+    // reading text file
+    FILE *pfile;
+    pfile  = fopen(file_path.c_str(), "r");
+    char name[80];
+    float value;
+    time_data_ = VectorXd::Zero(num_rows);
+    motion_data_ =  MatrixXd::Zero(num_rows, num_cols - 1);
+
+    // skip time name
+    if (fscanf(pfile, "%s", name) != 1) {
+        ROS_ERROR("Could not read/parse time name.");
+        return false;
+    }
+    // get position names
+    for (int i = 0; i < trajectory_dimension_; i++) {
+        if (fscanf(pfile, "%s", name) != 1) {
+            ROS_ERROR("Could not read/parse position names.");
+            return false;
+        }
+        position_names_.push_back((string) name);
+    }
+    // get velocity names
+    for (int i = 0; i < trajectory_dimension_; i++) {
+        if (fscanf(pfile, "%s", name) != 1) {
+            ROS_ERROR("Could not read/parse velocity names.");
+            return false;
+        }
+        velocity_names_.push_back((string) name);
+    }
+    // get acceleration names
+    for (int i = 0; i < trajectory_dimension_; i++) {
+        if (fscanf(pfile, "%s", name) != 1) {
+      	    ROS_ERROR("Could not read/parse acceleration names.");
+	    return false;
+	}
+        acceleration_names_.push_back((string) name);
+    }
+    // get trajectory data
+    for (int i = 0; i < num_rows; i++) {
+        for (int j = 0; j < num_cols; j++) {
+            if (fscanf(pfile, "%f", &value) != 1) {
+                ROS_ERROR("Could not read/parse motion values.");
+                return false;
+            }
+            if (j == 0)
+                time_data_(i) = value;
+            else
+                motion_data_(i, j - 1) = value;
+        }
+    }
+    fclose(pfile);
+
+    time_duration_ = getTrajectoryDuration();
+
+    return true;
+}
+
+
+bool Trajectory::writeToMessage(dynamic_movement_primitives::Trajectory& traj_msg)
+{
+    if (!initialized_) {
+        ROS_ERROR("Could not write because it need initialized the trajectory.");
+        return initialized_;
+    }
+
+    traj_msg.initialized = initialized_;
+    traj_msg.time_duration = time_duration_;
+    traj_msg.length = trajectory_length_;
+
+    return initialized_;
+}
+
+
+bool Trajectory::writeToFile(std::string file_name)
+{
+    if (!initialized_) {
+        ROS_ERROR("Could not write because it need initialized the trajectory.");
+        return initialized_;
+    }
+
+    std::string file_path = path_name_ + file_name;
+
+    std::ofstream outfile;
+    outfile.open(file_path.c_str());
+    if (!outfile) {
+        ROS_FATAL("Could not open the file %s", file_path.c_str());
+        return false;
+    }
+    outfile.precision(4);
+    outfile.setf(ios::fixed, ios::floatfield);
+    outfile.setf(ios::left, ios::adjustfield);
+
+    int num_trans_sys = motion_data_.cols() / POS_VEL_ACC;
+    for (int i = 0; i < motion_data_.rows() + 1; i++) {
+        for (int j = 0; j < motion_data_.cols() + 1; j++) {
+            if (i == 0) {
+		if (j == 0)
+		    outfile << "t" << '\t';
+		else {
+                    if (j < num_trans_sys + 1)
+ 	                outfile << position_names_[j-1].c_str() << '\t';
+	            else if (j < 2 * num_trans_sys + 1)
+		        outfile << velocity_names_[j-num_trans_sys-1].c_str() << '\t';
+	            else {
+		        if (j == motion_data_.cols())
+		            outfile << acceleration_names_[j-2*num_trans_sys-1].c_str() << endl;
+	  	        else
+		 	    outfile << acceleration_names_[j-2*num_trans_sys-1].c_str() << '\t';
+		    }
+        	}
+     	    }
+	    else {
+		if (j == 0)
+		    outfile << time_data_(i-1) << '\t';
+		else {
+		    if (j == motion_data_.cols() - 1)
+        	        outfile << motion_data_(i-1, j-1) << endl;
+		    else
+	                outfile << motion_data_(i-1, j-1) << '\t';
+		}
+	    }
+        }
+    }
+    outfile.close();
+
+  return true;
+}
+
+
+void Trajectory::getTrajectoryNames(std::vector<std::string>& names)
+{
+    for (int i = 0; i < trajectory_dimension_; i++) {
+        names.push_back(position_names_[i]);
+    }
+
+    for (int i = 0; i < trajectory_dimension_; i++) {
+        names.push_back(velocity_names_[i]);
+    }
+
+    for (int i = 0; i < trajectory_dimension_; i++) {
+        names.push_back(acceleration_names_[i]);
+    }
+}
+
+
+double Trajectory::getTrajectoryDuration()
+{
+    int end_value = time_data_.rows();
+    time_duration_ = time_data_(end_value-1);
+
+    return time_duration_;
+}
+
+
+} // @namespace dmp

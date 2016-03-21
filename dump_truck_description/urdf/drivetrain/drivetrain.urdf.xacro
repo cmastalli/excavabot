@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+       sensor and controller plugin specifications -->
+  <include filename="$(find dump_truck_description)/urdf/drivetrain/drive.gazebo.xacro" />
+
+  <property name="PI" value="3.141593" />
+
+  <!--============================= BODY ===============================-->
+  <!-- Body Reference Systems with respect to World Refence Systems -->
+  <property name="body_cs_x" value="3.01509" />
+  <property name="body_cs_y" value="0.784225" />
+  <property name="body_cs_z" value="0" />
+  <!-- Body Center of Gravity with respect to World Refence Systems  -->
+  <property name="body_cg_x" value="0" />
+  <property name="body_cg_y" value="1.04622" /> <!-- 1.04622 -->
+  <property name="body_cg_z" value="0.03792" />
+  <!-- Body Center of Rotation with respect to World Refence Systems  -->
+  <property name="body_cr_x" value="0" />
+  <property name="body_cr_y" value="0" /> <!-- 1.04622 -->
+  <property name="body_cr_z" value="0" />
+
+
+  <!--============================ WHEELS ===============================-->
+  <!-- Wheels Reference Systems and Center of Gravity with respect to World Refence Systems  -->
+  <property name="wheel_csg_x" value="0" />
+  <property name="wheel_csg_y" value="0" />
+  <property name="wheel_csg_z" value="0" />
+  <!-- Right Front Wheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="right_front_wheel_cr_x" value="-0.35295" /><!-- -3.36804 --> 
+  <property name="right_front_wheel_cr_y" value="0.784225" /><!-- 0.09246 -->
+  <property name="right_front_wheel_cr_z" value="-1.03188" />
+  <!-- Left Front Wheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="left_front_wheel_cr_x" value="-0.35295" />
+  <property name="left_front_wheel_cr_y" value="0.784225" />
+  <property name="left_front_wheel_cr_z" value="1.03188" /> 
+  <!-- Right Back Wheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="right_back_wheel_cr_x" value="2.45375" /> <!-- -0.56134 -->
+  <property name="right_back_wheel_cr_y" value="0.784225" />
+  <property name="right_back_wheel_cr_z" value="-1.03188" />
+  <!-- Left Back Wheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="left_back_wheel_cr_x" value="2.45375" />
+  <property name="left_back_wheel_cr_y" value="0.784225" />
+  <property name="left_back_wheel_cr_z" value="1.03188" />
+
+
+
+  <xacro:macro name="dump_truck_wheel" params="side type *origin">
+    <!-- Wheel-Body Joint -->
+    <joint name="${side}_${type}_wheel_body_joint" type="fixed">
+      <parent link="body_link"/>
+      <child link="${side}_${type}_wheel_link"/>
+      <insert_block name="origin"/>
+    </joint>
+    <!-- Rim-Wheel Joint -->
+    <joint name="rim_${side}_${type}_wheel_joint" type="fixed">
+      <parent link="${side}_${type}_wheel_link"/>
+      <child link="${side}_${type}_rim_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
+
+    <!-- Side Type Wheel Link -->
+    <link name="${side}_${type}_wheel_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/drivetrain/tire.dae"/>
+	</geometry>
+	<material name="Grey"/>
+      </visual>
+      <inertial>
+	<mass value="613.6"/>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<inertia ixx="115.4" ixy="0" ixz="0"
+		 iyy="205"   iyz="0" izz="115.4"/>
+
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/drivetrain/tire.stl"/>
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="${side}_${type}_wheel_link">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+    <!-- Rim Link -->
+    <link name="${side}_${type}_rim_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/drivetrain/rim.dae"/>
+	</geometry>
+	<material name="Yellow"/>
+      </visual>
+      <inertial>
+	<mass value="35.3"/>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<inertia ixx="1.09" ixy="0" ixz="0"
+		 iyy="1.32" iyz="0" izz="1.09"/>
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="0 0 0"/>
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/drivetrain/rim.stl"/>
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="${side}_${type}_rim_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+
+  <!-- extensions -->
+    <xacro:dump_truck_wheel_gazebo side="${side}" type="${type}" />
+  </xacro:macro>
+
+  <xacro:macro name="dump_truck_body" params="name">
+    <!-- FootPrint Joint -->
+    <joint name="${name}_footprint_joint" type="fixed">
+       <parent link="${name}_footprint" />
+       <child link="body_link" />
+       <origin rpy="${PI/2} 0 0" xyz="${body_cr_x}
+                                      ${body_cr_y}
+                                      ${body_cr_z}" />
+    </joint>
+
+    <!-- Virtual FootPrint Link -->
+    <link name="${name}_footprint">
+      <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	  <box size="0.001 0.001 0.001" />
+	</geometry>
+      </visual>
+      <inertial>
+	<mass value="1.0" />
+	<origin xyz="0 0 0" />
+	<inertia ixx="0.01" ixy="0.01" ixz="0.01"
+		 iyy="0.01" iyz="0.01" izz="0.01" />
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="0 0 0.2" />
+	<geometry>
+	  <box size="0.001 0.001 0.001" />
+	</geometry>
+      </collision>
+    </link>
+    <!-- Body Link -->
+    <link name="body_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="${body_cs_x-body_cr_x}
+                                 ${body_cs_y-body_cr_y}
+                                 ${body_cs_z-body_cr_z}" />
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/drivetrain/body.dae"/>
+	</geometry>
+	<material name="Yellow" />
+      </visual>
+      <inertial>
+	<mass value="6835.2" />
+	<origin rpy="0 0 0" xyz="${body_cg_x-body_cr_x}
+                                 ${body_cg_y-body_cr_y}
+                                 ${body_cg_z-body_cr_z}" />
+	<inertia ixx="12875.2" ixy="-23160.2" ixz="-949.1"
+		 iyy="76746.9" iyz="528.9"    izz="82576.5" />
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="${body_cs_x-body_cr_x}
+                                 ${body_cs_y-body_cr_y}
+                                 ${body_cs_z-body_cr_z}" />
+	<geometry>
+	  <mesh filename="package://dump_truck_description/meshes/drivetrain/body.stl"/>
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="body_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+
+    <!-- MACROs -->
+    <!-- Right Front Wheel -->
+    <xacro:dump_truck_wheel side="right" type="front">
+      <origin rpy="${PI/2} 0 0" xyz="${right_front_wheel_cr_x-body_cr_x} 
+			             ${right_front_wheel_cr_y-body_cr_y}
+			             ${right_front_wheel_cr_z-body_cr_z}"/>
+    </xacro:dump_truck_wheel>
+    <!-- Left Front Wheel -->
+    <xacro:dump_truck_wheel side="left" type="front">
+      <origin rpy="${-PI/2} 0 0" xyz="${left_front_wheel_cr_x-body_cr_x} 
+			              ${left_front_wheel_cr_y-body_cr_y}
+			              ${left_front_wheel_cr_z-body_cr_z}"/>
+    </xacro:dump_truck_wheel>
+    <!-- Right Back Wheel -->
+    <xacro:dump_truck_wheel side="right" type="back">
+      <origin rpy="${PI/2} 0 0" xyz="${right_back_wheel_cr_x-body_cr_x} 
+			             ${right_back_wheel_cr_y-body_cr_y}
+			             ${right_back_wheel_cr_z-body_cr_z}"/>
+    </xacro:dump_truck_wheel>
+    <!-- Left Back Wheel -->
+    <xacro:dump_truck_wheel side="left" type="back">
+      <origin rpy="${-PI/2} 0 0" xyz="${left_back_wheel_cr_x-body_cr_x} 
+			              ${left_back_wheel_cr_y-body_cr_y}
+			              ${left_back_wheel_cr_z-body_cr_z}"/>
+    </xacro:dump_truck_wheel>
+  </xacro:macro>
+</robot>

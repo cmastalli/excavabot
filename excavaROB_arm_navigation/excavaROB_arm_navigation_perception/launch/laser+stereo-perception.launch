@@ -1,0 +1,82 @@
+<launch>
+
+  <include file="$(find excavaROB_machine)/$(env ROBOT).machine" />
+  
+  <!-- send additional description parameters REVISANDO-->
+  <include file="$(find excavaROB_arm_navigation_config)/launch/excavaROB_planning_environment.launch" />
+
+
+  <!-- send command to tilt laser rangefinder controller [profile, period, amplitude and offset] -->
+  <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" name="right_laser_tilt_controller_3dnav_params"
+        args="right_laser_tilt_controller linear 4 0.75 0.0" />
+  <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" name="left_laser_tilt_controller_3dnav_params"
+        args="left_laser_tilt_controller linear 4 0.75 0.0" />
+
+
+  <!-- convert tilt laser scan to pointcloud -->
+  <node machine="c2" pkg="laser_filters" type="scan_to_cloud_filter_chain" output="screen" name="right_scan_to_cloud_filter_chain_tilt_laser">
+    <remap from="scan" to="/right_laser/scan"/>
+    <remap from="cloud_filtered" to="/right_laser/scan_cloud2"/>
+    <param name="target_frame" type="string" value="/base_footprint"/>
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/shadow_filter.yaml" />
+  </node>
+  <node machine="c2" pkg="laser_filters" type="scan_to_cloud_filter_chain" output="screen" name="left_scan_to_cloud_filter_chain_tilt_laser">
+    <remap from="scan" to="/left_laser/scan"/>
+    <remap from="cloud_filtered" to="/left_laser/scan_cloud2"/>
+    <param name="target_frame" type="string" value="/base_footprint"/>
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/shadow_filter.yaml" />
+  </node>
+
+
+   <!-- right and left laser self filter -->
+  <node  pkg="robot_self_filter" type="self_filter" name="right_laser_self_filter" output="screen">
+    <remap from="robot_description" to="robot_description" />     <!-- machine=c2 -->
+    <remap from="cloud_in" to="/right_laser/scan_cloud2" />     
+    <remap from="cloud_out" to="/right_laser/scan_cloud_filtered2" />
+    <param name="sensor_frame" type="string" value="/right_scan_point_link" />
+    <param name="subsample_value" type="double" value="0.01"/>
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/self_filter.yaml" />
+  </node>
+  <node pkg="robot_self_filter" type="self_filter" name="left_laser_self_filter" output="screen">
+    <remap from="robot_description" to="robot_description" />     <!-- machine=c2 -->
+    <remap from="cloud_in" to="/left_laser/scan_cloud2" />     
+    <remap from="cloud_out" to="/left_laser/scan_cloud_filtered2" />
+    <param name="sensor_frame" type="string" value="/left_scan_point_link" />
+    <param name="subsample_value" type="double" value="0.01"/>
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/self_filter.yaml" />
+  </node>
+
+
+  <!-- self filter stereo points -->
+  <node pkg="robot_self_filter" type="self_filter" respawn="true" name="stereo_self_filter" output="screen">
+     <remap from="cloud_in" to="/stereo_camera/points2" />
+     <remap from="cloud_out" to="/stereo_camera/points2_filtered" />
+     
+     <param name="subsample_value" type="double" value=".02"/>
+     <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/self_filter_stereo_camera.yaml" />
+  </node>
+
+
+  <!-- get collision map -->
+  <node pkg="collider" type="collider_node" name="collider_node" respawn="true" output="screen">
+    <param name="fixed_frame" type="string" value="odom_combined" />
+    <param name="resolution" type="double" value="0.1" />
+    <param name="max_range" type="double" value="22" />
+    <param name="pruning_period" type="int" value="10" />
+    <param name="publish_static_over_dynamic_map" value="false" />
+    <param name="sensor_model_hit" value= "0.8" />
+    <param name="sensor_model_miss" value= "0.31" />
+    <param name="sensor_model_min" value= "0.12" />
+    <param name="sensor_model_max" value= "0.95" />   
+
+    <remap from="collision_map_out" to="collision_map_occ" />
+    <remap from="point_cloud_out" to="octomap_point_cloud" />
+
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/collision_map_sources_laser+stereo.yaml"/>
+   
+    <!-- self filtering links -->
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/self_filter.yaml" />
+  </node>
+
+
+</launch>

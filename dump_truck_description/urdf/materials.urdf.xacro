@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot>
+
+  <material name="Yellow">
+    <color rgba="1 1 0 1" />
+    <!-- 0.529412 0.54902 0.54902 1 / 0.752941 0.752941 0 1 -->
+  </material>
+
+  <material name="Grey">
+      <color rgba="0.501961 0.501961 0.501961 1" />
+      <!-- Bucket 0.501961 0.501961 0.501961 1 Chimmey 1 0.94902 0.909804 1 -->
+  </material>
+
+  <material name="Black">
+    <color rgba="0 0 0 1" />
+  </material>
+
+</robot>

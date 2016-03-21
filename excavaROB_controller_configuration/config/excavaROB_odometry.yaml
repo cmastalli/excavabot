@@ -1,0 +1,33 @@
+base_odometry:
+  type: excavaROB_mechanism_controllers/ExcavaROBOdometry
+
+  right_wheel_names: right_drive_wheel_link right_front_wheel_link 
+  left_wheel_names:  left_drive_wheel_link left_front_wheel_link
+  odom_frame: odom
+  base_footprint_frame: base_footprint
+  base_link_frame: drivetrain_link
+
+  odometer:
+    initial_distance: 0.0
+    initial_angle: 0.0
+
+  odom:
+    initial_x: 0.0
+    initial_y: -2.0
+    initial_yaw: 0.0
+
+  wheel_radius_multiplier: 1.0
+  track_distance: 2.2542373
+
+  publish_tf: true
+  x_stddev: 0.002
+  y_stddev: 0.002
+  rotation_stddev: 0.017
+  cov_xy: 0.0
+  cov_xrotation: 0.0
+  cov_yrotation: 0.0
+
+  verbose: false
+  odom_publish_rate: 100.0
+  odometry_state_publish_rate: 100.0
+  odometer_publish_rate: 1.0

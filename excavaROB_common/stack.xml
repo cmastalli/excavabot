@@ -1,0 +1,9 @@
+<stack>
+  <description brief="excavaROB_common">excavaROB_common</description>
+  <author>Maintained by Carlos Mastalli</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_common</url>
+  <depend stack="ros" />
+
+</stack>

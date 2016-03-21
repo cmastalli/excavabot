@@ -1,0 +1,25 @@
+<launch>
+
+
+  <node pkg="motion_record" type="base_controller_state_record" name="excavaROB_base_controller_state_record" output="screen">
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/base_states/"/>
+    <param name="motion_name" value="base_controller_state"/>
+  </node>
+
+  <node pkg="motion_record" type="pose_odom_state_record" name="excavaROB_pose_odom_state_record" output="screen">
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/base_states/"/>
+    <param name="motion_name" value="pose_odom_state"/>
+  </node>
+
+  <node pkg="motion_record" type="pose_ekf_state_record" name="excavaROB_pose_ekf_state_record" output="screen">
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/base_states/"/>
+    <param name="motion_name" value="pose_ekf_state"/>
+  </node>
+
+  <node pkg="motion_record" type="pose_truth_state_record" name="excavaROB_pose_truth_state_record" output="screen">
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/base_states/"/>
+    <param name="motion_name" value="pose_truth_state"/>
+  </node>
+
+
+</launch>

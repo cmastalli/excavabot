@@ -1,0 +1,26 @@
+<package>
+  <description brief="excavaROB_arm_kinematics">
+
+     This package provides a kinematics implementation for the excavaROB robot. It can be used to compute forward and inverse kinematics.
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_arm_kinematics</url>
+
+  <depend package="roscpp"/>
+  <depend package="urdf"/>
+  <depend package="kdl"/>
+  <depend package="kdl_parser"/>
+  <depend package="eigen"/>
+  <depend package="excavaROB_arm_kinematics_msgs"/>
+  <depend package="kinematics_msgs"/>
+  <depend package="tf_conversions" />
+
+  <platform os="ubuntu" version="9.04"/>
+  <platform os="ubuntu" version="9.10"/>
+  <platform os="ubuntu" version="10.04"/>
+</package>
+
+

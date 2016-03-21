@@ -1,0 +1,22 @@
+<launch>
+
+   <!-- right and left laser self filter -->
+  <node  pkg="robot_self_filter" type="self_filter" name="right_laser_self_filter" output="screen">
+    <remap from="robot_description" to="robot_description" />     <!-- machine=c2 -->
+    <remap from="cloud_in" to="/right_laser/scan_cloud2" />     
+    <remap from="cloud_out" to="/right_laser/scan_cloud_filtered2" />
+    <param name="sensor_frame" type="string" value="/right_scan_point_link" />
+    <param name="subsample_value" type="double" value="0.01"/>
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/self_filter.yaml" />
+  </node>
+  <node pkg="robot_self_filter" type="self_filter" name="left_laser_self_filter" output="screen">
+    <remap from="robot_description" to="robot_description" />     <!-- machine=c2 -->
+    <remap from="cloud_in" to="/left_laser/scan_cloud2" />     
+    <remap from="cloud_out" to="/left_laser/scan_cloud_filtered2" />
+    <param name="sensor_frame" type="string" value="/left_scan_point_link" />
+    <param name="subsample_value" type="double" value="0.01"/>
+    <rosparam command="load" file="$(find excavaROB_arm_navigation_perception)/config/self_filter.yaml" />
+  </node>
+
+
+</launch>

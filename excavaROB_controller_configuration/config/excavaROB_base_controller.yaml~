@@ -1,0 +1,27 @@
+base_controller:
+  type: "excavaROB_mechanism_controllers/ExcavaROBBaseController"
+  
+  publish_tf: false
+  right_wheel_names: right_drive_wheel_link right_front_wheel_link
+  left_wheel_names: left_drive_wheel_link left_front_wheel_link
+
+  wheel_radius_multiplier: 1.0
+  track_distance: 2.2542373
+
+  max_translational_velocity: 1.0 
+  max_rotational_velocity: 1.0
+  max_translational_acceleration: 1.0
+  max_rotational_acceleration: 1.0
+  timeout: 0.2
+
+  pid_translational:
+    p: 120000
+    i: 20000
+    d: 10
+    i_clamp: 100000
+
+  pid_rotational:
+    p: 120000
+    i: 20000
+    d: 10
+    i_clamp: 100000

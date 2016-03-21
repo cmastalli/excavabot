@@ -1,0 +1,23 @@
+<package>
+  <description brief="dynamic_movement_primitives">
+
+     dynamic_movement_primitives
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/dynamic_movement_primitives</url>
+
+  <depend package="roscpp"/>
+  <rosdep name="eigen" />
+  <depend package="lwr"/>
+  <depend package="rosbag"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ldynamic_movement_primitives"/>
+  </export>
+
+</package>
+
+

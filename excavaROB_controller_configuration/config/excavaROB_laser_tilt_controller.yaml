@@ -1,0 +1,33 @@
+right_laser_tilt_controller:
+  type:  pr2_mechanism_controllers/LaserScannerTrajController
+  joint: right_support_pantilt_laser_joint
+  gains:
+    p: 8.0
+    i: 0.1
+    d: 0.2
+    i_clamp: 0.5
+  velocity_filter:
+    - name: low_pass
+      type: filters/TransferFunctionFilterDouble
+      params:
+        a: [1.0, -0.1]
+        b: [0.9]
+  max_velocity:    100
+  max_acceleration: 30
+
+left_laser_tilt_controller:
+  type:  pr2_mechanism_controllers/LaserScannerTrajController
+  joint: left_support_pantilt_laser_joint
+  gains:
+    p: 8.0
+    i: 0.1
+    d: 0.2
+    i_clamp: 0.5
+  velocity_filter:
+    - name: low_pass
+      type: filters/TransferFunctionFilterDouble
+      params:
+        a: [1.0, -0.1]
+        b: [0.9]
+  max_velocity:    100
+  max_acceleration: 30

@@ -1,0 +1,357 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+       sensor and controller plugin specifications -->
+  <include filename="$(find excavaROB_description)/urdf/turret/turret.transmission.xacro" />
+  <include filename="$(find excavaROB_description)/urdf/sensors/imu/microstrain_3dmgx2_imu.urdf.xacro" />
+
+
+  <!--========================== TURRET ===============================-->
+  <!-- Turret Reference Systems with respect to World Refence Systems -->
+  <property name="turret_cs_x" value="0" />
+  <property name="turret_cs_y" value="0" />
+  <property name="turret_cs_z" value="1.1811" /> <!-- 0,1.1811,0 -->
+  <!-- Turret Center of Gravity with respect to World Refence Systems -->
+  <property name="turret_cg_x" value="-0.220722" />
+  <property name="turret_cg_y" value="0.103264" />
+  <property name="turret_cg_z" value="1.47724" /> <!-- -0.220722,1.47724,-0.103264 -->
+  <!-- Turret-Drivetrain Center of Rotation with respect to World Refence Systems -->
+  <property name="turret_drivetrain_cr_x" value="3.8949e-005" />
+  <property name="turret_drivetrain_cr_y" value="0" />
+  <property name="turret_drivetrain_cr_z" value="0.825501" /> <!-- (TD 3.8949e-005,0.825501,0)-(D -0.293301 0.48143 0) -->
+
+  <!--========================== TOPCOMPARTMENT ===============================-->
+  <!-- TopCompartment Reference Systems with respect to World Refence Systems -->
+  <property name="topcompartment_cs_x" value="-0.875" />
+  <property name="topcompartment_cs_y" value="0" />
+  <property name="topcompartment_cs_z" value="2.1611" /> <!-- -0.875,2.1611,0 -->
+  <!-- TopCompartment Center of Gravity with respect to World Refence Systems -->
+  <property name="topcompartment_cg_x" value="-0.912023" />
+  <property name="topcompartment_cg_y" value="-2.41953e-008" />
+  <property name="topcompartment_cg_z" value="2.12387" /> <!-- -0.912023,2.12387,2.41953e-008 -->
+  <!-- TopCompartment-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="topcompartment_turret_cr_x" value="-0.875" />
+  <property name="topcompartment_turret_cr_y" value="0" />
+  <property name="topcompartment_turret_cr_z" value="2.1611" /> <!-- -0.875,2.1611,0 -->
+
+  <!--========================== CHIMMEY ===============================-->
+  <!-- Chimmey Reference Systems with respect to World Refence Systems -->
+  <property name="chimmey_cs_x" value="-1.15" />
+  <property name="chimmey_cs_y" value="0" />
+  <property name="chimmey_cs_z" value="2.1611" /> <!-- -1.15,2.1611,0 -->
+  <!-- Chimmey Center of Gravity with respect to World Refence Systems -->
+  <property name="chimmey_cg_x" value="-1.12087" />
+  <property name="chimmey_cg_y" value="-0.0920771" />
+  <property name="chimmey_cg_z" value="2.26314" /> <!-- -1.12087,2.26314,0.0920771 -->
+  <!-- Chimmey-TopCompartment Center of Rotation with respect to World Refence Systems -->
+  <property name="chimmey_topcompartment_cr_x" value="-0.4305" />
+  <property name="chimmey_topcompartment_cr_y" value="0.61803" />
+  <property name="chimmey_topcompartment_cr_z" value="2.1611" /> <!-- -0.4305,2.1611,-0.61803 -->
+
+  <!--========================== SUPPORT STEREO CAMERA ===============================-->
+  <!-- SupportStereoCamera Reference Systems with respect to World Refence Systems -->
+  <property name="support_stereo_camera_cs_x" value="1.1" />
+  <property name="support_stereo_camera_cs_y" value="0.777875" />
+  <property name="support_stereo_camera_cs_z" value="2.69198" /> <!-- 1.1,2.69198,-0.777875 -->
+  <!-- SupportStereoCamera Center of Gravity with respect to World Refence Systems -->
+  <property name="support_stereo_camera_cg_x" value="1.15396" />
+  <property name="support_stereo_camera_cg_y" value="0.777875" />
+  <property name="support_stereo_camera_cg_z" value="3.01675" /> <!-- 1.15396,3.01675,-0.777875 -->
+  <!-- SupportStereoCamera-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="support_stereo_camera_turret_cr_x" value="1.1" />
+  <property name="support_stereo_camera_turret_cr_y" value="0.777875" />
+  <property name="support_stereo_camera_turret_cr_z" value="2.69198" /> <!-- 1.1,2.69198,-0.777875 -->
+
+  <!--========================== SUPPORT RIGHT LASER ===============================-->
+  <!-- SupportRightLaser Reference Systems with respect to World Refence Systems -->
+  <property name="support_right_laser_cs_x" value="1" />
+  <property name="support_right_laser_cs_y" value="-1.11992" />
+  <property name="support_right_laser_cs_z" value="2.1681" /> <!-- 1,2.1681,1.11992 -->
+  <!-- SupportRightLaser Center of Gravity with respect to World Refence Systems -->
+  <property name="support_right_laser_cg_x" value="0.980969" />
+  <property name="support_right_laser_cg_y" value="-1.11992" />
+  <property name="support_right_laser_cg_z" value="1.73633" /> <!-- 0.980969,1.73633,1.11992 -->
+  <!-- SupportRightLaser-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="support_right_laser_turret_cr_x" value="1" />
+  <property name="support_right_laser_turret_cr_y" value="-1.11992" />
+  <property name="support_right_laser_turret_cr_z" value="2.1681" /> <!-- 1,2.1681,1.11992 -->
+
+  <!--========================== SUPPORT LEFT LASER ===============================-->
+  <!-- SupportLeftLaser Reference Systems with respect to World Refence Systems -->
+  <property name="support_left_laser_cs_x" value="1" />
+  <property name="support_left_laser_cs_y" value="1.03163" />
+  <property name="support_left_laser_cs_z" value="2.8681" /> <!-- 1,2.8681,-1.03163 -->
+  <!-- SupportLeftLaser Center of Gravity with respect to World Refence Systems -->
+  <property name="support_left_laser_cg_x" value="1.00482" />
+  <property name="support_left_laser_cg_y" value="1.03163" />
+  <property name="support_left_laser_cg_z" value="2.8175" /> <!-- 1.00482,2.8175,-1.03163 -->
+  <!-- SupportLeftLaser-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="support_left_laser_turret_cr_x" value="1" />
+  <property name="support_left_laser_turret_cr_y" value="1.03163" />
+  <property name="support_left_laser_turret_cr_z" value="2.8681" /> <!-- 1,2.8681,-1.03163 -->
+
+
+
+  <xacro:macro name="excavaROB_turret" params="parent">
+  <!-- Turret Drivetrain Joint -->
+	<joint name="turret_drivetrain_joint" type="continuous">
+		<parent link="${parent}_link" />
+		<child link="turret_link" />
+		<axis xyz="0 0 1"/>
+		<origin rpy="0 0 0" xyz="${turret_drivetrain_cr_x-drivetrain_cgr_x}
+					 ${turret_drivetrain_cr_y-drivetrain_cgr_y}
+					 ${turret_drivetrain_cr_z-drivetrain_cgr_z}" />
+		<limit effort="35000.0" velocity="0.5"/> <!-- AJUSTAR -->
+		<!--<safety_controller k_position="20" k_velocity="4" soft_upper_limit="${PI/2 - 0.10}" soft_lower_limit="${-PI/2 + 0.10}" />-->
+		<dynamics damping="1" friction="100" />
+		<calibration falling="${0}" />
+
+	</joint>
+  <!-- TopComparTment Turret Joint -->
+	<joint name="topcompartment_turret_joint" type="fixed">
+		<parent link="turret_link" />
+		<child link="topcompartment_link" />
+		<origin rpy="0 0 0" xyz="${topcompartment_turret_cr_x-turret_drivetrain_cr_x}
+					 ${topcompartment_turret_cr_y-turret_drivetrain_cr_y}
+					 ${topcompartment_turret_cr_z-turret_drivetrain_cr_z}" />
+	</joint>
+  <!-- Chimmey TopComparTment Joint -->
+	<joint name="chimmey_turret_joint" type="fixed">
+		<parent link="topcompartment_link" />
+		<child link="chimmey_link" />
+		<origin rpy="0 0 0" xyz="${chimmey_topcompartment_cr_x-topcompartment_turret_cr_x}
+					 ${chimmey_topcompartment_cr_y-topcompartment_turret_cr_y}
+					 ${chimmey_topcompartment_cr_z-topcompartment_turret_cr_z}" />
+	</joint>
+  <!-- SupportStereoCamera Turret Joint -->
+	<joint name="support_stereo_camera_turret_joint" type="fixed">
+		<parent link="turret_link" />
+		<child link="support_stereo_camera_link" />
+		<origin rpy="0 0 0" xyz="${support_stereo_camera_turret_cr_x-turret_drivetrain_cr_x}
+					 ${support_stereo_camera_turret_cr_y-turret_drivetrain_cr_y}
+					 ${support_stereo_camera_turret_cr_z-turret_drivetrain_cr_z}" />
+	</joint>
+  <!-- SupportRightLaser Turret Joint -->
+	<joint name="support_right_laser_turret_joint" type="fixed">
+		<parent link="turret_link" />
+		<child link="support_right_laser_link" />
+		<origin rpy="0 0 ${-PI/6}" xyz="${support_right_laser_turret_cr_x-turret_drivetrain_cr_x}
+					        ${support_right_laser_turret_cr_y-turret_drivetrain_cr_y}
+					        ${support_right_laser_turret_cr_z-turret_drivetrain_cr_z}" />
+	</joint>
+  <!-- SupportLeftLaser Turret Joint -->
+	<joint name="support_left_laser_turret_joint" type="fixed">
+		<parent link="turret_link" />
+		<child link="support_left_laser_link" />
+		<origin rpy="0 0 ${PI/6}" xyz="${support_left_laser_turret_cr_x-turret_drivetrain_cr_x}
+				               ${support_left_laser_turret_cr_y-turret_drivetrain_cr_y}
+					       ${support_left_laser_turret_cr_z-turret_drivetrain_cr_z}" />
+	</joint>
+
+  <!-- Turret Link -->
+	<link name="turret_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${turret_cs_x-turret_drivetrain_cr_x} 
+			       			 ${turret_cs_y-turret_drivetrain_cr_y}
+			      			 ${turret_cs_z-turret_drivetrain_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/turret.dae"/>
+			</geometry>
+			<material name="Yellow" />
+		</visual>
+		<inertial>
+			<mass value="3710.24" /><!--"6710.24"-->
+			<origin rpy="0 0 0" xyz="${turret_cg_x-turret_drivetrain_cr_x} 
+			       			 ${turret_cg_y-turret_drivetrain_cr_y}
+			      			 ${turret_cg_z-turret_drivetrain_cr_z}" />
+			<inertia ixx="2953.39" ixy="-242.218" ixz="504.924"
+				 iyy="5781.2" iyz="220.791"  izz="4278.63" />
+<!--			<inertia ixx="5341.42" ixy="-438.069" ixz="913.192"
+				 iyy="10455.7" iyz="399.317"  izz="7738.22" />-->
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${turret_cs_x-turret_drivetrain_cr_x} 
+			       			 ${turret_cs_y-turret_drivetrain_cr_y}
+			      			 ${turret_cs_z-turret_drivetrain_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/turret.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="turret_link">
+		<material>Gazebo/Yellow</material>
+	</gazebo>
+  <!-- TopCompartment Link -->
+	<link name="topcompartment_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${topcompartment_cs_x-topcompartment_turret_cr_x} 
+			       			 ${topcompartment_cs_y-topcompartment_turret_cr_y}
+			      			 ${topcompartment_cs_z-topcompartment_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/topcompartment.dae"/>
+			</geometry>
+			<material name="Black" />
+		</visual>
+		<inertial>
+			<mass value="269.186" />
+			<origin rpy="0 0 0" xyz="${topcompartment_cg_x-topcompartment_turret_cr_x} 
+			       			 ${topcompartment_cg_y-topcompartment_turret_cr_y}
+			      			 ${topcompartment_cg_z-topcompartment_turret_cr_z}" />
+			<inertia ixx="48.9122" ixy="-1.17627"     ixz="2.53864e-006"
+				 iyy="76.0041" iyz="9.42237e-007" izz="28.312" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${topcompartment_cs_x-topcompartment_turret_cr_x} 
+			       			 ${topcompartment_cs_y-topcompartment_turret_cr_y}
+			      			 ${topcompartment_cs_z-topcompartment_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/topcompartment.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="topcompartment_link">
+		<material>Gazebo/Black</material>
+	</gazebo>
+  <!-- Chimmey Link -->
+	<link name="chimmey_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${chimmey_cs_x-chimmey_topcompartment_cr_x} 
+			       			 ${chimmey_cs_y-chimmey_topcompartment_cr_y}
+			      			 ${chimmey_cs_z-chimmey_topcompartment_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/chimmey.dae"/>
+			</geometry>
+			<material name="Grey" />
+		</visual>
+		<inertial>
+			<mass value="38.9822" />
+			<origin rpy="0 0 0" xyz="${chimmey_cg_x-chimmey_topcompartment_cr_x} 
+			       			 ${chimmey_cg_y-chimmey_topcompartment_cr_y}
+			      			 ${chimmey_cg_z-chimmey_topcompartment_cr_z}" />
+			<inertia ixx="4.6726"  ixy="-0.00646868" ixz="-0.279036"
+				 iyy="4.26054" iyz="-0.265778"   izz="0.573608" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${chimmey_cs_x-chimmey_topcompartment_cr_x} 
+			       			 ${chimmey_cs_y-chimmey_topcompartment_cr_y}
+			      			 ${chimmey_cs_z-chimmey_topcompartment_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/chimmey.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="chimmey_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+  <!-- SupportStereoCamera Link -->
+	<link name="support_stereo_camera_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${support_stereo_camera_cs_x-support_stereo_camera_turret_cr_x} 
+			       			 ${support_stereo_camera_cs_y-support_stereo_camera_turret_cr_y}
+			      			 ${support_stereo_camera_cs_z-support_stereo_camera_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/support_stereo_camera.dae"/>
+			</geometry>
+			<material name="Grey" />
+		</visual>
+		<inertial>
+			<mass value="0.296144" />
+			<origin rpy="0 0 0" xyz="${support_stereo_camera_cg_x-support_stereo_camera_turret_cr_x} 
+			       		         ${support_stereo_camera_cg_y-support_stereo_camera_turret_cr_y}
+			      		         ${support_stereo_camera_cg_z-support_stereo_camera_turret_cr_z}" />
+			<inertia ixx="0.00763" ixy="-2.2876e-10" ixz="3.2929e-11"
+				 iyy="0.00153" iyz="-0.00189"    izz="0.00642" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${support_stereo_camera_cs_x-support_stereo_camera_turret_cr_x} 
+			       			 ${support_stereo_camera_cs_y-support_stereo_camera_turret_cr_y}
+			      			 ${support_stereo_camera_cs_z-support_stereo_camera_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/support_stereo_camera.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="support_stereo_camera_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+  <!-- SupportRightLaser Link -->
+	<link name="support_right_laser_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${support_right_laser_cs_x-support_right_laser_turret_cr_x} 
+			       			 ${support_right_laser_cs_y-support_right_laser_turret_cr_y}
+			      			 ${support_right_laser_cs_z-support_right_laser_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/support_right_laser.dae"/>
+			</geometry>
+			<material name="Grey" />
+		</visual>
+		<inertial>
+			<mass value="5.22519" />
+			<origin rpy="0 0 0" xyz="${support_right_laser_cg_x-support_right_laser_turret_cr_x} 
+			       		         ${support_right_laser_cg_y-support_right_laser_turret_cr_y}
+			      			 ${support_right_laser_cg_z-support_right_laser_turret_cr_z}" />
+			<inertia ixx="0.5096" ixy="0.02120" ixz="0"
+				 iyy="0.0733" iyz="0"       izz="0.5304" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${support_right_laser_cs_x-support_right_laser_turret_cr_x} 
+			       			 ${support_right_laser_cs_y-support_right_laser_turret_cr_y}
+			      			 ${support_right_laser_cs_z-support_right_laser_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/support_right_laser.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="support_right_laser_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+  <!-- SupportLeftLaser Link -->
+	<link name="support_left_laser_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${support_left_laser_cs_x-support_left_laser_turret_cr_x} 
+			       			 ${support_left_laser_cs_y-support_left_laser_turret_cr_y}
+			      			 ${support_left_laser_cs_z-support_left_laser_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/support_left_laser.dae"/>
+			</geometry>
+			<material name="Grey" />
+		</visual>
+		<inertial>
+			<mass value="1.38238" />
+			<origin rpy="0 0 0" xyz="${support_left_laser_cg_x-support_left_laser_turret_cr_x} 
+			       			 ${support_left_laser_cg_y-support_left_laser_turret_cr_y}
+			      			 ${support_left_laser_cg_z-support_left_laser_turret_cr_z}" />
+			<inertia ixx="0.0118" ixy="0.000207"   ixz="-2.693e-10"
+				 iyy="0.0150" iyz="2.2016e-10" izz="0.0132931" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${support_left_laser_cs_x-support_left_laser_turret_cr_x} 
+			       			 ${support_left_laser_cs_y-support_left_laser_turret_cr_y}
+			      			 ${support_left_laser_cs_z-support_left_laser_turret_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/turret/support_left_laser.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="support_left_laser_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+
+    <!-- extensions -->
+    <xacro:excavaROB_turret_transmission parent="${parent}" />
+
+    <!-- imu -->
+<!--    <xacro:microstrain_3dmgx2_imu name="imu" parent="turret" imu_topic="turret_imu/data" update_rate="100.0" stdev="0.00017" >
+        <origin xyz="0 0 0" rpy="0 ${PI} 0" />
+    </xacro:microstrain_3dmgx2_imu>
+-->
+  </xacro:macro>
+
+</robot>

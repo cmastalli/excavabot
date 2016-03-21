@@ -1,0 +1,26 @@
+<launch>
+
+    <!-- excavaROB model and world -->
+    <include file="$(find excavaROB_description)/test/excavaROB_test.launch" />
+
+    <!-- Controller Manager -->
+    <include file="$(find excavaROB_controller_configuration)/launch/excavaROB_controller_manager.launch" />
+
+    <!-- Fake Calibration -->
+    <node pkg="rostopic" type="rostopic" name="fake_joint_calibration"
+          args="pub /calibrated std_msgs/Bool true" />
+
+   <!-- excavaROB Odometry -->
+   <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_odometry.yaml" command="load" />
+   <!-- excavaROB Base -->
+   <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_base_controller.yaml" command="load" />
+   <!-- excavaROB Arm: turret, boom, stick and bucket -->
+   <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_arm_controller.yaml" command="load" />
+   <!-- excavaROB Laser RangenFinder: right and left laser -->
+   <rosparam file="$(find excavaROB_controller_configuration)/config/excavaROB_laser_tilt_controller.yaml" command="load" />
+
+   <!-- Controllers that come up started -->
+   <node name="default_controller_spawner" pkg="pr2_controller_manager" type="spawner"
+	 output="screen" args="--wait-for=/calibrated base_odometry base_controller arm_controller right_laser_tilt_controller left_laser_tilt_controller"  />
+
+</launch>

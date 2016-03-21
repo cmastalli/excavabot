@@ -1,0 +1,14 @@
+<package>
+  <description brief="simulations_gazebo">
+
+     simulations_gazebo
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/simulations_gazebo</url>
+
+</package>
+
+

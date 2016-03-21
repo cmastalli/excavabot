@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="excavaROB_arm_transmission" params="parent">
+
+    <!-- Boom Turret Transmission -->
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="boom_${parent}_trans">
+      <joint name="boom_${parent}_joint"/>
+      <actuator name="boom_${parent}_motor"/>
+      <mechanicalReduction>${1}</mechanicalReduction><!--  / cal_r_shoulder_pan_gearing -->
+<!--      <compensator k_belt="4000.0" mass_motor="0.05" kd_motor="15.0" lambda_motor="40.0" lambda_joint="40.0" lambda_combined="0.0"/>-->
+    </transmission>
+
+    <!-- Stick Boom Transmission -->
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="stick_boom_trans">
+      <joint name="stick_boom_joint"/>
+      <actuator name="stick_boom_motor"/>
+      <mechanicalReduction>${1}</mechanicalReduction>
+<!--      <compensator k_belt="4000.0" mass_motor="0.05" kd_motor="10.0" lambda_motor="60.0" lambda_joint="60.0" lambda_combined="0.0"/>-->
+    </transmission>
+
+  </xacro:macro>
+
+</robot>

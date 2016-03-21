@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <xacro:macro name="excavaROB_wheel_gazebo" params="side type">
+    <gazebo reference="${side}_${type}_wheel_link">
+      <mu1 value="0.25" /><!--100/50000-->
+      <mu2 value="0.25" /><!--100/50000-->
+      <kp  value="1e13" /><!--"1000000/1e13-->
+      <kd  value="5e9" /><!--1/5e9-->
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="excavaROB_drive_gazebo" params="name">
+    <gazebo reference="${name}_link">
+      <selfCollide>false</selfCollide>
+      <sensor:contact name="${name}_contact_sensor">
+        <geom>${name}_link_geom</geom>
+        <updateRate>100.0</updateRate>
+        <controller:gazebo_ros_bumper name="${name}_gazebo_ros_bumper_controller" plugin="libgazebo_ros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${name}_bumper</bumperTopicName>
+          <interface:bumper name="${name}_bumper_iface" />
+        </controller:gazebo_ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo reference="${name}_bellow_link">
+      <material value="PR2/Black" />
+    </gazebo>
+    <gazebo>
+      <controller:gazebo_ros_p3d name="p3d_base_controller" plugin="libgazebo_ros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>${name}_link</bodyName>
+        <topicName>${name}_pose_ground_truth</topicName>
+        <gaussianNoise>0.01</gaussianNoise>
+        <frameName>map</frameName>
+        <xyzOffsets>0 0 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+        <rpyOffsets>0 0 0</rpyOffsets>
+        <interface:position name="p3d_base_position"/>
+      </controller:gazebo_ros_p3d>
+      <canonicalBody>base_footprint</canonicalBody>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

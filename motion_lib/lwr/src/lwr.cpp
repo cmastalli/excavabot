@@ -1,0 +1,426 @@
+
+/** \autor Carlos Mastalli*/
+
+// system includes
+#include <iostream>
+#include <fstream>
+#include <assert.h>
+
+// ros includes
+#include <boost/filesystem.hpp>
+
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <boost/foreach.hpp>
+
+// local includes
+#include <lwr/lwr.h>
+
+// import most common Eigen types
+using namespace Eigen;
+
+namespace lwr
+{
+
+static const char* lwr_model_file_name = "lwr_model.bag";
+static const char* lwr_model_topic_file_name = "lwr_model";
+
+LocallyWeightedRegression::LocallyWeightedRegression() :
+    initialized_(false), num_rfs_(0)
+{
+}
+
+LocallyWeightedRegression::~LocallyWeightedRegression() {
+}
+
+bool LocallyWeightedRegression::initialize(ros::NodeHandle& node_handle)
+{
+    ROS_WARN_COND(initialized_, "LWR model already initialized. Re-initializing with new parameters.");
+
+    ros::NodeHandle nh(node_handle, "lwr");
+    // get path name from parameter server
+    if (!nh.getParam("path_name", path_name_)) {
+        ROS_FATAL("Could not found the path_name from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // get number of receptive fields from parameter server
+    if (!nh.getParam("num_rfs", num_rfs_)) {
+        ROS_FATAL("Could not found the num_rfs from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+    else if (num_rfs_ <= 0) {
+        ROS_ERROR("Number of receptive fields (%i) is invalid.", num_rfs_);
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // get cutoff frequency of canonical systems from parameter server
+    if (!nh.getParam("can_sys_cutoff", can_sys_cutoff_)) {
+        ROS_FATAL("Could not found the can_sys_cutoff from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // get width boundary of receptive fields
+    if (!nh.getParam("rfs_width_boundary", rfs_width_boundary_)) {
+        ROS_FATAL("Could not found rfs_width_boundary from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+    else if ((rfs_width_boundary_ < 0 || rfs_width_boundary_ > 1.0)) {
+        ROS_ERROR("Wrong value for width_boundary parameter (%f) ...should be between 0 and 1.", rfs_width_boundary_);
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // get if it's exponentially spaced
+    if (!nh.getParam("exponentially_spaced", exponentially_spaced_)) {
+        ROS_FATAL("Could not found exponentially_spaced from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // set dimensions of parameter of gaussian basis functions
+    centers_ = VectorXd::Zero(num_rfs_);
+    thetas_ = VectorXd::Zero(num_rfs_);
+    widths_ = VectorXd::Zero(num_rfs_);
+    offsets_ = VectorXd::Zero(num_rfs_);
+
+    if (exponentially_spaced_) {
+        double x_input_last = 1.0;
+        double alpha = -log(can_sys_cutoff_);
+        for (int i = 0; i < num_rfs_; ++i) {
+            double t = (i+1) * (1. / static_cast<double> (num_rfs_ - 1)) * 1.0; // 1.0 is the default duration
+            double x_input = exp(-alpha * t);
+
+            widths_(i) = pow(x_input - x_input_last, 2) / -log(rfs_width_boundary_);
+            centers_(i) = x_input_last;
+            x_input_last = x_input;
+        }
+    }
+    else {
+        double diff;
+        if (num_rfs_ == 1) {
+            centers_(0) = 0.5;
+            diff = 0.5;
+        }
+        else {
+            for (int i = 0; i < num_rfs_; i++) {
+                centers_(i) = static_cast<double> (i) / static_cast<double> (num_rfs_ - 1);
+            }
+            diff = static_cast<double> (1.0) / static_cast<double> (num_rfs_ - 1);
+        }
+        double width = -pow(diff / static_cast<double> (2.0), 2) / log(rfs_width_boundary_);
+        for (int i = 0; i < num_rfs_; i++) {
+            widths_(i) = width;
+        }
+    }
+
+    initialized_ = true;
+    return initialized_;
+}
+
+bool LocallyWeightedRegression::initFromMessage(const lwr::Model& lwr_model)
+{
+    initialized_ = lwr_model.initialized;
+    num_rfs_ = lwr_model.num_rfs;
+    widths_ = VectorXd::Zero(num_rfs_);
+    centers_ = VectorXd::Zero(num_rfs_);
+    thetas_ = VectorXd::Zero(num_rfs_);
+    offsets_ = VectorXd::Zero(num_rfs_);
+    for (int i = 0; i < num_rfs_; i++) {
+        widths_(i) = lwr_model.widths[i];
+        centers_(i) = lwr_model.centers[i];
+        thetas_(i) = lwr_model.thetas[i];
+        offsets_(i) = lwr_model.offsets[i];
+    }
+
+    return true;
+}
+
+bool LocallyWeightedRegression::initializeFromDisc(const std::string directory_name)
+{
+    if (initialized_)
+        ROS_WARN("LWR model already initialized, re-initializing it.");
+
+    std::string bagfile_name = directory_name + std::string(lwr_model_file_name);
+    try
+    {
+        rosbag::Bag bag(bagfile_name, rosbag::bagmode::Read);
+        rosbag::View view(bag, rosbag::TopicQuery(lwr_model_topic_file_name));
+        BOOST_FOREACH(rosbag::MessageInstance const msg, view)
+        {
+            lwr::Model::ConstPtr lwr_model = msg.instantiate<lwr::Model> ();
+	    assert(transformation_system != NULL);
+	    if (!initFromMessage(*lwr_model)) {
+	        ROS_ERROR("Could not set LWR model.");
+        	initialized_ = false;
+        	return initialized_;
+            }
+        }
+        bag.close();
+    }
+    catch (rosbag::BagIOException ex)
+    {
+        ROS_ERROR("Could not open bag file %s: %s", bagfile_name.c_str(), ex.what());
+        initialized_ = false;
+        return initialized_;
+    }
+
+    initialized_ = true;
+    return initialized_;
+}
+
+bool LocallyWeightedRegression::writeToMessage(lwr::Model& lwr_model)
+{
+    lwr_model.initialized = initialized_;
+    lwr_model.num_rfs = num_rfs_;
+    lwr_model.widths.clear();
+    lwr_model.centers.clear();
+    lwr_model.thetas.clear();
+    lwr_model.offsets.clear();
+    for (int i = 0; i < num_rfs_; i++) {
+        lwr_model.widths.push_back(widths_(i));
+        lwr_model.centers.push_back(centers_(i));
+        lwr_model.thetas.push_back(thetas_(i));
+        lwr_model.offsets.push_back(offsets_(i));
+    }
+    return true;
+}
+
+bool LocallyWeightedRegression::writeToDisc(const std::string directory_name)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model not initialized.\n");
+        return initialized_;
+    }
+
+    assert(centers_.size() == num_rfs_);
+    assert(thetas_.size() == num_rfs_);
+
+    std::string bagfile_name = directory_name + std::string(lwr_model_file_name);
+    try
+    {
+        rosbag::Bag bag(bagfile_name, rosbag::bagmode::Write);
+        lwr::Model lwr_model;
+        if (!writeToMessage(lwr_model)) {
+	    ROS_ERROR("Could not get LWR model.");
+	    return false;
+        }
+        bag.write(lwr_model_topic_file_name, ros::Time::now(), lwr_model);
+        bag.close();
+    }
+    catch (rosbag::BagIOException ex)
+    {
+        ROS_ERROR("Could not open bag file %s: %s", bagfile_name.c_str(), ex.what());
+        return false;
+    }
+    return true;
+}
+
+bool LocallyWeightedRegression::learnWeights(const VectorXd &x_input_vector, const VectorXd &y_target_vector)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model is not initialized.");
+        return initialized_;
+    }
+    if (x_input_vector.size() != y_target_vector.size()) {
+        ROS_ERROR("Input (%i) and target (%i) vector have different sizes.", (int) x_input_vector.size(), (int) y_target_vector.size());
+        return false;
+    }
+
+    MatrixXd basis_function_matrix = MatrixXd::Zero(x_input_vector.size(), centers_.size());
+    if (!generateBasisFunctionMatrix(x_input_vector, basis_function_matrix)) {
+        ROS_ERROR("Could not generate basis function matrix.");
+        return false;
+    }
+
+    MatrixXd matrix_a = MatrixXd::Zero(x_input_vector.size(), num_rfs_);
+    matrix_a = x_input_vector.array().square().matrix() * MatrixXd::Ones(1, num_rfs_);
+    matrix_a = (matrix_a.array() * basis_function_matrix.array()).matrix();
+
+    VectorXd vector_zt_z = VectorXd::Zero(num_rfs_, 1);
+    vector_zt_z = matrix_a.colwise().sum(); // (zT * z)
+
+    MatrixXd matrix_b = MatrixXd::Zero(x_input_vector.size(), num_rfs_);
+    matrix_b = (x_input_vector.array() * y_target_vector.array()).matrix() * MatrixXd::Ones(1, num_rfs_);
+    matrix_b = (matrix_b.array() * basis_function_matrix.array()).matrix();
+
+    VectorXd vector_zt_v = VectorXd::Zero(num_rfs_, 1);
+    vector_zt_v = matrix_b.colwise().sum(); // zT * v
+    
+    double ridge_regression = 0.0000000001;
+    thetas_ = (vector_zt_v.array() / (vector_zt_z.array() + ridge_regression)).matrix(); // (zT * z + lambda)^-1 * zT * v
+    return true;
+}
+
+bool LocallyWeightedRegression::predict(const double x_query, double &y_prediction)
+{
+    if (!initialized_) {
+      ROS_ERROR("LWR model not initialized.\n");
+      return initialized_;
+    }
+
+    double xt = 0;
+    double xtd = 0;
+    for (int i = 0; i < num_rfs_; i++) {
+        double psi = getGaussianKernel(x_query, i);
+        xtd +=  psi * x_query * thetas_(i);
+        xt += psi;
+    }
+//  ROS_INFO("xtd = %f", xtd);
+    y_prediction = xtd / xt;
+    return true;
+}
+
+bool LocallyWeightedRegression::generateBasisFunctionMatrix(const VectorXd &x_input_vector, MatrixXd &basis_function_matrix)
+{
+    if (x_input_vector.size() == 0) {
+        ROS_ERROR("Cannot compute psi for an empty vector.");
+        return false;
+    }
+    assert(basis_function_matrix.rows() == x_input_vector.size());
+    assert(basis_function_matrix.cols() == centers_.size());
+    for (int i = 0; i < x_input_vector.size(); i++) {
+        for (int j = 0; j < centers_.size(); j++) {
+            basis_function_matrix(i, j) = getGaussianKernel(x_input_vector[i], j);
+        }
+    }
+
+    return true;
+}
+
+double LocallyWeightedRegression::getGaussianKernel(const double x_input, const int center_index)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model not initialized.\n");
+        return initialized_;
+    }
+    return exp(-(static_cast<double> (1.0) / widths_(center_index)) * pow(x_input - centers_(center_index), 2));
+}
+
+bool LocallyWeightedRegression::getThetas(VectorXd &thetas)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model not initialized.\n");
+        return initialized_;
+    }
+
+    assert(thetas.cols() == thetas_.cols());
+    assert(thetas.rows() == thetas_.rows());
+
+    thetas = thetas_;
+    return true;
+}
+
+bool LocallyWeightedRegression::setThetas(const VectorXd &thetas)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model not initialized.\n");
+        return initialized_;
+    }
+    assert(thetas.cols() == thetas_.cols());
+    assert(thetas.rows() == thetas_.rows());
+    thetas_ = thetas;
+    return true;
+}
+
+bool LocallyWeightedRegression::updateThetas(const VectorXd &delta_thetas)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model not initialized.\n");
+        return initialized_;
+    }
+    assert(delta_thetas.cols() == thetas_.cols());
+    assert(delta_thetas.rows() == thetas_.rows());
+    thetas_ += delta_thetas;
+    return true;
+}
+
+bool LocallyWeightedRegression::getWidthsAndCenters(VectorXd &widths,
+                                                    VectorXd &centers)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR model not initialized.\n");
+        return initialized_;
+    }
+    widths = widths_;
+    centers = centers_;
+    return true;
+}
+
+std::string LocallyWeightedRegression::getInfoString()
+{
+    std::string info;
+    info.clear();
+
+    // TODO: use utility function to convert from int to string
+
+    std::stringstream ss;
+    ss.clear();
+
+    int precision = 4;
+    ss.precision(precision);
+
+    if (initialized_) {
+        info.append(std::string("initialized:true "));
+    }
+    else {
+        info.append(std::string("initialized:false"));
+    }
+    info.append(std::string(" \tnum_rfs:"));
+    ss << num_rfs_;
+    info.append(ss.str());
+
+    ss.str("");
+    ss.clear();
+    info.append(std::string("\nwidths: "));
+    for (int i = 0; i < widths_.size(); i++) {
+        ss << widths_[i];
+        info.append(std::string("\t") + ss.str() + std::string(" "));
+        ss.str("");
+        ss.clear();
+    }
+
+    ss.str("");
+    ss.clear();
+    info.append(std::string("\nthetas: "));
+    for (int i = 0; i < thetas_.size(); i++) {
+        ss << thetas_[i];
+        info.append(std::string("\t") + ss.str() + std::string(" "));
+        ss.str("");
+        ss.clear();
+    }
+
+    ss.str("");
+    ss.clear();
+    info.append(std::string("\ncenters:"));
+    for (int i = 0; i < centers_.size(); i++) {
+        ss << centers_[i];
+        info.append(std::string("\t") + ss.str() + std::string(" "));
+        ss.str("");
+        ss.clear();
+    }
+
+    return info;
+}
+
+bool LocallyWeightedRegression::getNumRFS(int &num_rfs)
+{
+    if (!initialized_) {
+        ROS_ERROR("LWR is not initialized, not returning number of receptive fields.");
+        return false;
+    }
+    num_rfs = num_rfs_;
+    return true;
+}
+
+std::string LocallyWeightedRegression::getPathName()
+{
+    return path_name_;
+}
+
+}

@@ -1,0 +1,8 @@
+<launch>
+
+    <node name="gazebo" pkg="gazebo" type="gazebo" 
+          args="$(find excavaROB_description)/Worlds/terrain.world" output="screen" respawn="false" />
+    
+    <include file="$(find excavaROB_description)/test/excavaROB_model.launch" />
+
+</launch>

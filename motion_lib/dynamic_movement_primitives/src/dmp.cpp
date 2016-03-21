@@ -1,0 +1,698 @@
+#include <dynamic_movement_primitives/dmp.h>
+
+#include <fstream>
+
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
+
+// import most common Eigen types
+using namespace Eigen;
+
+namespace dmp
+{
+
+static const char* FT_FILE_NAME = "_ft.txt";
+static const char* TRAJ_LEARNED_FILE_NAME = "_traj_learned.txt";
+
+static const char* DMP_MODEL_FILE_NAME = "_dmp.bag";
+static const char* DMP_MODEL_TOPIC_FILE_NAME = "dmp_model";
+
+DynamicMovementPrimitives::DynamicMovementPrimitives(ros::NodeHandle& node_handle) :
+    node_handle_(node_handle), initialized_(false), initialized_by_msg_(false),  num_trans_sys_(0), is_setup_(false), 
+    is_start_state_set_(false), is_learned_(false)
+{
+}
+
+
+DynamicMovementPrimitives::~DynamicMovementPrimitives() {
+}
+
+
+bool DynamicMovementPrimitives::initialize()
+{
+    ros::NodeHandle nh(node_handle_, "dmp");
+
+    if (!nh.getParam("dmp_name", dmp_name_)) {
+	ROS_ERROR("Could not get dmp_name.");
+	initialized_ = false;
+	return initialized_;
+    }
+
+    // trajectory initialization
+    if (!trajectory_.initialize(node_handle_)) {
+	ROS_ERROR("Could not initialize the trajectory of DMP.");
+	initialized_ = false;
+	return initialized_;
+    }
+
+    if (!trajectory_.readFromFile()) {
+	ROS_ERROR("Could not read the trajectory.");
+	initialized_ = false;
+	return initialized_;
+    }
+    trajectory_.getTrajectoryNames(traj_names_);
+    execution_duration_ = trajectory_.getDuration();
+
+    // canonical system initialization
+    if (!canonical_system_.initialize(node_handle_)) {
+	ROS_ERROR("Could not initialize the canonical systems.");
+	initialized_ = false;
+	return initialized_;
+    }
+
+    // transformation systems initializations
+    num_trans_sys_ = trajectory_.getDimension();
+    transformation_systems_.resize(num_trans_sys_);
+    for (int i = 0; i < num_trans_sys_; i++) {
+	if (!transformation_systems_[i].initialize(node_handle_, i)) {
+	    ROS_ERROR("Could not initialize the transformation systems %i.", i);
+	    initialized_ = false;
+	    return initialized_;
+	}
+    }
+
+    initialized_ = true;
+    return initialized_;
+}
+
+
+bool DynamicMovementPrimitives::initializeFromDisc(const std::string directory_name, const std::string dmp_name)
+{
+    if (initialized_)
+	ROS_WARN("DMP model already initialized, re-initializing it.");
+
+    std::string bagfile_name = directory_name + dmp_name + std::string(DMP_MODEL_FILE_NAME);
+    try
+    {
+	rosbag::Bag bag(bagfile_name, rosbag::bagmode::Read);
+	rosbag::View view(bag, rosbag::TopicQuery(DMP_MODEL_TOPIC_FILE_NAME));
+	int message_counter = 0;
+	BOOST_FOREACH(rosbag::MessageInstance const msg, view)
+	{
+	    if (message_counter > 1) {
+		ROS_ERROR("Bagfile should only contain a single DMP.");
+		return false;
+	    }
+	    message_counter++;
+
+	    dynamic_movement_primitives::Model::ConstPtr dmp_model = msg.instantiate<dynamic_movement_primitives::Model> ();
+	    ROS_ASSERT(dmp_model != NULL);
+	    if (!initFromMessage(*dmp_model)) {
+		ROS_ERROR("Could not set DMP model.");
+		initialized_ = false;
+		return initialized_;
+	    }
+	}
+	bag.close();
+    }
+    catch (rosbag::BagIOException ex)
+    {
+	ROS_ERROR("Could not open bag file %s: %s", bagfile_name.c_str(), ex.what());
+	initialized_ = false;
+	return initialized_;
+    }
+
+    initialized_ = true;
+    return initialized_;
+}
+
+
+bool DynamicMovementPrimitives::initFromMessage(const dynamic_movement_primitives::Model& dmp_model)
+{
+    initialized_ = dmp_model.initialized;
+    is_learned_ = dmp_model.is_learned;
+    dmp_name_ = dmp_model.name;
+    num_trans_sys_ = dmp_model.num_trans_sys;
+
+    traj_names_.resize(dmp_model.var_name.size());
+    for (unsigned int i = 0; i < dmp_model.var_name.size(); i++)
+	traj_names_[i] = dmp_model.var_name[i];
+
+    if (!trajectory_.initFromMessage(dmp_model.traj)) {
+	ROS_ERROR("Could not initialized the trajectory information.");
+	return false;
+    }
+    execution_duration_ = trajectory_.getDuration();
+
+    if (!canonical_system_.initFromMessage(dmp_model.can_sys)) {
+	ROS_ERROR("Could not initialized the canonical system.");
+	return false;
+    }
+
+    transformation_systems_.resize(num_trans_sys_);
+    for (int i = 0; i < num_trans_sys_; i++) {
+	if (!transformation_systems_[i].initFromMessage(dmp_model.trans_sys[i])) {
+	    ROS_ERROR("Could not initialized the transformation system %i.", i);
+	    return false;
+	}
+    }
+
+    initialized_by_msg_ = true;
+    return initialized_by_msg_;
+}
+
+
+bool DynamicMovementPrimitives::writeToDisc(const std::string directory_name)
+{
+    if (!is_learned_) {
+	ROS_ERROR("Could not write to %s directory because it's not learned the DMP.", directory_name.c_str());
+	return is_learned_;
+    }
+
+    std::string bagfile_name = directory_name + dmp_name_ + std::string(DMP_MODEL_FILE_NAME);
+    try
+    {
+	rosbag::Bag bag(bagfile_name, rosbag::bagmode::Write);
+	dynamic_movement_primitives::Model dmp_model;
+	if (!writeToMessage(dmp_model)) {
+	    ROS_ERROR("Could not get the DMP model.");
+	    return false;
+	}
+	bag.write(DMP_MODEL_TOPIC_FILE_NAME, ros::Time::now(), dmp_model);
+	bag.close();
+    }
+    catch (rosbag::BagIOException ex)
+    {
+	ROS_ERROR("Could not open bag file %s: %s.", bagfile_name.c_str(), ex.what());
+	return false;
+    }
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::writeToMessage(dynamic_movement_primitives::Model& dmp_model)
+{
+    dmp_model.initialized = initialized_;
+    dmp_model.is_learned = is_learned_;
+    dmp_model.name = dmp_name_;
+    dmp_model.num_trans_sys = num_trans_sys_;
+
+    dmp_model.var_name.clear();
+    for (unsigned int i = 0; i < traj_names_.size(); i++)
+	dmp_model.var_name.push_back(traj_names_[i]);
+
+    dmp_model.trans_sys.clear();
+    dmp_model.trans_sys.resize(num_trans_sys_);
+
+    if (!trajectory_.writeToMessage(dmp_model.traj)) {
+	ROS_ERROR("Could not write the trajectory information.");
+	return false;
+    }
+
+    if (!canonical_system_.writeToMessage(dmp_model.can_sys)) {
+	ROS_ERROR("Could not write the canonical systems.");
+	return false;
+    }
+
+    for (int i = 0; i < num_trans_sys_; i++) {
+	if (!transformation_systems_[i].writeToMessage(dmp_model.trans_sys[i])) {
+	    ROS_ERROR("Could not write the transformation system %i.", i);
+	    return false;
+	}
+    }
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::writeToFile(std::string directory_name)
+{
+    if (!is_learned_) {
+	ROS_ERROR("Could not write to %s directory because it's not learned the DMP", directory_name.c_str());
+	return is_learned_;
+    }
+
+    std::string ft_file_path = directory_name + dmp_name_ + std::string(FT_FILE_NAME);
+    std::string traj_learned_file_path = directory_name + dmp_name_ + std::string(TRAJ_LEARNED_FILE_NAME);
+
+    if (!initialized_by_msg_)
+	if (!writeTargetFunctionData(ft_file_path))
+	    ROS_WARN("Could not write target function data.");
+
+    if (!writeTrajectoryGenerated(traj_learned_file_path))
+	ROS_WARN("Could not write the trajectory learned.");
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::writeTargetFunctionData(std::string file_path)
+{
+    std::ofstream ft_file;
+    ft_file.open(file_path.c_str());
+    if (!ft_file) {
+	ROS_FATAL("Could not open the file %s", file_path.c_str());
+	return false;
+    }
+    ft_file.precision(4);
+    ft_file.setf(ios::fixed, ios::floatfield);
+    ft_file.setf(ios::left, ios::adjustfield);
+
+    for (int i = 0; i < (signed) ft_input_.size() + 1; i++) {
+	for (int j = 0; j < num_trans_sys_ + 1; j++) {
+	    if (i == 0) {
+		std::string num_str = int2string(j);
+		if (j == 0)
+		    ft_file << "s" << '\t';
+		else {
+		    if (j == num_trans_sys_)
+		        ft_file << "f_" + num_str << '\t' << "fl_" + num_str << endl;
+		    else
+		        ft_file << "f_" + num_str << '\t' << "fl_" + num_str << '\t';
+		}
+	    }
+	    else {
+		if (j == 0)
+		    ft_file << ft_input_[i-1] << '\t';
+		else {
+		    ft_file << transformation_systems_[j-1].target_function_[i-1] << '\t';
+		    if (j == num_trans_sys_)
+		        ft_file << ft_learned_(i-1, j-1) << endl;
+		    else
+		        ft_file << ft_learned_(i-1, j-1) << '\t';
+		}
+	    }
+	}
+    }
+    ft_file.close();
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::writeTrajectoryGenerated(std::string file_path)
+{
+    std::ofstream traj_file;
+    traj_file.open(file_path.c_str());
+    if (!traj_file) {
+	ROS_FATAL("Could not open the file %s", file_path.c_str());
+	return false;
+    }
+    traj_file.precision(4);
+    traj_file.setf(ios::fixed, ios::floatfield);
+    traj_file.setf(ios::left, ios::adjustfield);
+
+    double traj_length = x_[0].size();
+
+    for (int i = 0; i < traj_length + 1; i++) {
+	for (int j = 0; j < num_trans_sys_ * POS_VEL_ACC + 1; j++) {
+	    if (i == 0) {
+		if (j == 0)
+		    traj_file << "t" << '\t';
+		else {
+		    if (j == num_trans_sys_ * POS_VEL_ACC)
+		        traj_file << traj_names_[j-1] + "_l" << endl;
+		    else
+		        traj_file << traj_names_[j-1] + "_l" << '\t';
+		}
+	    }
+	    else {
+		if (j == 0)
+		    traj_file << t_[i-1] << '\t';
+		else {
+		    if (j < num_trans_sys_ + 1)
+		        traj_file << x_[j-1][i-1] << '\t';
+		    else if (j < 2 * num_trans_sys_ + 1)
+		        traj_file << xd_[j-num_trans_sys_-1][i-1] << '\t';
+		    else if (j < 3 * num_trans_sys_ + 1) {
+		        if (j == num_trans_sys_ * POS_VEL_ACC)
+			    traj_file << xdd_[j-2*num_trans_sys_-1][i-1] << endl;
+		        else
+			    traj_file << xdd_[j-2*num_trans_sys_-1][i-1] << '\t';
+		    }
+		}
+	    }
+	}
+    }
+    traj_file.close();
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::learnFromTrajectory()
+{
+    if (!initialized_) {
+	ROS_ERROR("DMP motion unit is not initialized, not learning from trajectory.");
+	is_learned_ = false;
+	return is_learned_;
+    }
+
+    int traj_length = trajectory_.getLength();
+    delta_t_ = trajectory_.getTime(0);
+
+    // check if it was introduce tau and alpha parameter.
+    if (canonical_system_.tau_ == 0 && canonical_system_.alpha_ == 0) {
+	canonical_system_.setCanonicalSystem(1.0, execution_duration_ / 5.25);
+        ROS_INFO("It change alpha = 1 and tau = trajectory_duration/5.25 = %f.", execution_duration_ / 5.25);
+    }
+    if (canonical_system_.tau_ != 0 && canonical_system_.alpha_ == 0) {
+	canonical_system_.setCanonicalSystem(5.25 / execution_duration_ * canonical_system_.tau_, canonical_system_.tau_);
+        ROS_INFO("It change alpha = %f and tau = %f.", canonical_system_.alpha_, canonical_system_.tau_);
+    }
+
+    if (traj_length < MIN_NUM_DATA_POINTS) {
+	ROS_ERROR("Trajectory has %i rows, but should have at least %i.", traj_length, MIN_NUM_DATA_POINTS);
+	is_learned_ = false;
+	return is_learned_;
+    }
+
+    ft_input_.clear();
+
+    // obtain start and goal position
+    VectorXd start = VectorXd::Zero(num_trans_sys_);
+    if (!trajectory_.getStartPosition(start)) {
+	ROS_ERROR("Could not get the start position of the trajectory.");
+	is_learned_ = false;
+	return is_learned_;
+    }
+    VectorXd goal = VectorXd::Zero(num_trans_sys_);
+    if (!trajectory_.getEndPosition(goal)) {
+	ROS_ERROR("Could not get the goal position of the trajectory.");
+	is_learned_ = false;
+	return is_learned_;
+    }
+
+    // set x0 to start state of trajectory and set goal to end of the trajectory
+    for (int i = 0; i < num_trans_sys_; i++) {
+	transformation_systems_[i].reset();
+
+	// set start and goal
+	transformation_systems_[i].setStart(start(i));
+	transformation_systems_[i].setGoal(goal(i));
+
+	// set current state to start state (position and velocity)
+	transformation_systems_[i].setState(start(i), 0.0);
+    }
+
+    // set x0 and goal state of demostrated trajectory
+    for (int i = 0; i < num_trans_sys_; i++) {
+	transformation_systems_[i].setInitialStart(transformation_systems_[i].x0_);
+	transformation_systems_[i].setInitialGoal(transformation_systems_[i].goal_);
+    }
+
+    for (int t = 0; t < traj_length; t++) {
+	// set time
+	if (t != 0) {
+	    delta_t_ = trajectory_.getTime(t) - trajectory_.getTime(t-1);
+	}
+
+	// set transformation target state
+	for (int i = 0; i < num_trans_sys_; i++) {
+	    std::string pos = traj_names_[i];
+	    std::string vel = traj_names_[i + num_trans_sys_];
+	    std::string acc = traj_names_[i + 2 * num_trans_sys_];
+
+	    transformation_systems_[i].xt_ = trajectory_.getTrajectory(t, pos);
+	    transformation_systems_[i].xtd_ = trajectory_.getTrajectory(t, vel);
+	    transformation_systems_[i].xtdd_ = trajectory_.getTrajectory(t, acc);
+	    transformation_systems_[i].f_ = 0.0;
+	    transformation_systems_[i].ft_ = 0.0;
+	}
+
+	computeTargetFunction();
+    }
+
+    if (!learnTargetFunction()) {
+	ROS_ERROR("Could not learn the target function.");
+	is_learned_ = false;
+	return is_learned_;
+    }
+    ROS_INFO("Successfully learned DMP with id x from trajectory.");
+    is_learned_ = true;
+
+    if (!computeTargetFunctionLearned())
+	ROS_WARN("Could not computed the target function learned.");
+
+    double step_duration = 0.01;
+    if (!generateTrajectory(start, goal, step_duration))
+	ROS_WARN("Could not generated the trajectory learned.");
+
+    return is_learned_;
+}
+
+
+void DynamicMovementPrimitives::computeTargetFunction()
+{
+    ft_input_.push_back(canonical_system_.s_);
+
+    for (int i = 0; i < num_trans_sys_; i++) {
+	transformation_systems_[i].f_ = (transformation_systems_[i].xtdd_ * pow(canonical_system_.tau_, 2) +
+	    transformation_systems_[i].d_gain_ * transformation_systems_[i].xtd_ * canonical_system_.tau_) / transformation_systems_[i].k_gain_ -
+	    (transformation_systems_[i].goal_ - transformation_systems_[i].xt_) + (transformation_systems_[i].goal_ - transformation_systems_[i].x0_) * 
+	    canonical_system_.s_;
+
+	transformation_systems_[i].ft_ = transformation_systems_[i].f_;
+
+	// the nonlinearity is computed by LWR (later)
+	transformation_systems_[i].target_function_.push_back(transformation_systems_[i].ft_);
+    }
+
+    canonical_system_.time_ += delta_t_;
+    canonical_system_.integrateCanonicalSystem();
+}
+
+
+bool DynamicMovementPrimitives::learnTargetFunction()
+{
+    Eigen::Map<VectorXd> input = VectorXd::Map(&ft_input_[0], ft_input_.size());
+
+    for (int i = 0; i < num_trans_sys_; i++) {
+	if (ft_input_.size() != transformation_systems_[i].target_function_.size()) {
+	    ROS_ERROR("Target trajectory of transformation system %i has different size than input trajectory.", i);
+	    return false;
+	}
+
+	Eigen::Map<VectorXd> target = VectorXd::Map(&transformation_systems_[i].target_function_[0],
+                                                    transformation_systems_[i].target_function_.size());
+	if (!transformation_systems_[i].lwr_model_.learnWeights(input, target)) {
+	    ROS_ERROR("Could not learn weights of transformation system %i.", i);
+	    return false;
+	}
+    }
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::computeTargetFunctionLearned()
+{
+    if (!is_learned_) {
+	ROS_ERROR("Could not compute the target function because it's not learned.");
+	return false;
+    }
+
+    ft_learned_ = MatrixXd::Zero(ft_input_.size(), num_trans_sys_);
+    int traj_index = 0;
+    for (std::vector<double>::iterator s = ft_input_.begin(); s != ft_input_.end(); s++) {
+	for (int i = 0; i < num_trans_sys_; i++) {
+	    double prediction = 0;
+	    if (!transformation_systems_[i].lwr_model_.predict(*s, prediction)) {
+		ROS_ERROR("Could not predict output.");
+		return false;
+	    }
+	    ft_learned_(traj_index, i) = prediction;
+	}
+	traj_index++;
+    }
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::generateTrajectory(Eigen::VectorXd x0, Eigen::VectorXd goal, const double step_duration)
+{
+    if (!is_learned_) {
+	ROS_ERROR("Could not generate the trajectory because it's not learned.");
+	return false;
+    }
+
+    if (!setup(x0, goal)) {
+	ROS_ERROR("Could not generate the trajectory because it can't setup DMP.");
+	return false;
+    }
+
+    bool movement_finished = false;
+    int traj_index = 0;
+    while (!movement_finished) {
+	Eigen::MatrixXd traj_desired = MatrixXd::Zero(num_trans_sys_, POS_VEL_ACC);
+	if (!generateStepTrajectory(traj_desired, movement_finished, step_duration)) {
+	    ROS_ERROR("Could not generate the trajectory in step %i.", traj_index);
+	    return false;
+	}
+	traj_index++;
+    }
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::generateStepTrajectory(Eigen::MatrixXd& traj_desired, bool& movement_finished, const double step_duration)
+{
+    delta_t_ = step_duration;
+    if (canonical_system_.time_ + delta_t_ > execution_duration_ + 0.05) {
+	movement_finished = true;
+	return true;
+    }
+    else
+	movement_finished = false;
+
+    for (int i = 0; i < num_trans_sys_; i++) {
+	double f_pred;
+	if (!transformation_systems_[i].lwr_model_.predict(canonical_system_.s_, f_pred)) {
+	    ROS_ERROR("Could not predict the nonlinear function.");
+	    return false;
+	}
+
+        transformation_systems_[i].vd_ = (transformation_systems_[i].k_gain_ * (transformation_systems_[i].goal_ - transformation_systems_[i].x_) - 
+	    transformation_systems_[i].d_gain_ * transformation_systems_[i].v_ - transformation_systems_[i].k_gain_ *
+	    (transformation_systems_[i].goal_ - transformation_systems_[i].x0_) * canonical_system_.s_ + transformation_systems_[i].k_gain_ * f_pred) *
+	    (static_cast<double> (1.0) / canonical_system_.tau_);
+
+	transformation_systems_[i].xdd_ = transformation_systems_[i].vd_ / canonical_system_.tau_;
+	transformation_systems_[i].xd_ = transformation_systems_[i].v_ / canonical_system_.tau_;
+
+	// integrate all systems
+	transformation_systems_[i].v_ += transformation_systems_[i].vd_ * delta_t_;
+	transformation_systems_[i].x_ += transformation_systems_[i].xd_ * delta_t_;
+
+	traj_desired(i, 0) = transformation_systems_[i].x_;
+	traj_desired(i, 1) = transformation_systems_[i].xd_;
+	traj_desired(i, 2) = transformation_systems_[i].xdd_;
+
+	x_[i].push_back(transformation_systems_[i].x_);
+	xd_[i].push_back(transformation_systems_[i].xd_);
+	xdd_[i].push_back(transformation_systems_[i].xdd_);
+    }
+
+    // canonical system
+    canonical_system_.time_ += delta_t_;
+    canonical_system_.integrateCanonicalSystem();
+
+    t_.push_back(canonical_system_.time_);
+
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::setup(Eigen::VectorXd x0, Eigen::VectorXd goal)
+{
+    // check the size of x0 and goal arrays
+    if (x0.size() != num_trans_sys_) {
+	ROS_ERROR("The size of initial state must be %i.", num_trans_sys_);
+	return false;
+    }
+    if (goal.size() != num_trans_sys_) {
+	ROS_ERROR("The size of goal state must be %i.", num_trans_sys_);
+	return false;
+    }
+
+    // initialize trajectory to generated
+    x_.resize(num_trans_sys_);
+    xd_.resize(num_trans_sys_);
+    xdd_.resize(num_trans_sys_);
+
+    // reset trajectory generated, transformation and canonical systems
+    for (int i = 0; i < num_trans_sys_; i++) {
+	t_.clear();
+	x_[i].clear();
+	xd_[i].clear();
+	xd_[i].clear();
+
+	transformation_systems_[i].reset();
+
+	transformation_systems_[i].setStart(x0[i]);
+	transformation_systems_[i].setGoal(goal[i]);
+	transformation_systems_[i].setState(x0[i], 0.0);
+    }
+    canonical_system_.reset();
+
+    is_setup_ = true;
+    is_start_state_set_ = true;
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::setup(Eigen::VectorXd goal)
+{
+    if (goal.size() != num_trans_sys_) {
+	ROS_ERROR("The size of goal state must be %i.", num_trans_sys_);
+	return false;
+    }
+
+    // initialize trajectory to generated
+    x_.resize(num_trans_sys_);
+    xd_.resize(num_trans_sys_);
+    xdd_.resize(num_trans_sys_);
+
+    // reset trajectory generated, transformation and canonical systems
+    for (int i = 0; i < num_trans_sys_; i++) {
+	x_[i].clear();
+	xd_[i].clear();
+	xd_[i].clear();
+
+	transformation_systems_[i].reset();
+
+	transformation_systems_[i].setGoal(goal[i]);
+    }
+    canonical_system_.reset();
+
+    is_setup_ = true;
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::changeStartState(const Eigen::VectorXd& x0)
+{
+    if (!is_setup_)
+	return false;
+
+    // check the size of x0 array
+    if (x0.size() != num_trans_sys_) {
+	ROS_ERROR("The size of initial state must be %i.", num_trans_sys_);
+	return false;
+    }
+
+    // set start state
+    for (int i = 0; i < num_trans_sys_; i++) {
+	transformation_systems_[i].setStart(x0[i]);
+	transformation_systems_[i].setState(x0[i], 0.0);
+    }
+
+    is_start_state_set_ = true;
+    return true;
+}
+
+
+bool DynamicMovementPrimitives::changeGoalState(const Eigen::VectorXd& goal)
+{
+    if (!is_setup_)
+	return false;
+
+    // check the size of goal array
+    if (goal.size() != num_trans_sys_) {
+	ROS_ERROR("The size of goal state must be %i.", num_trans_sys_);
+	return false;
+    }
+
+    // set goal state
+    for (int i = 0; i < num_trans_sys_; i++) {
+	transformation_systems_[i].setGoal(goal[i]);
+    }
+
+    return true;
+}
+
+
+void DynamicMovementPrimitives::changeExecutionTime(double execution_time)
+{
+    execution_duration_ = execution_time;
+    canonical_system_.setCanonicalSystem(5.25 * canonical_system_.tau_ / execution_duration_, canonical_system_.tau_);//(canonical_system_.alpha_, canonical_system_.alpha_ * execution_duration_ / 5.25);
+    ROS_INFO("It change alpha = %f and tau = %f due the execution time is %f.", canonical_system_.alpha_, canonical_system_.tau_, execution_duration_);
+}
+
+
+}  //@namespace dmp

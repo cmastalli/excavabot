@@ -1,0 +1,14 @@
+<package>
+  <description brief="excavaROB_gazebo">
+
+     excavaROB_gazebo
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_gazebo</url>
+
+</package>
+
+

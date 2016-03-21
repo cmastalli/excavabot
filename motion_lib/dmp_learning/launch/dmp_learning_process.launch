@@ -1,0 +1,7 @@
+<launch>
+ 
+  <node pkg="dmp_learning" type="dmp_learning" name="dmp_learning" output="screen">				
+    <rosparam command="load" file="$(find dmp_learning)/launch/dmp_learning.yaml" />
+  </node>
+
+</launch>

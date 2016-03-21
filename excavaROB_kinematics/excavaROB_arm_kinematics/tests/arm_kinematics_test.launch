@@ -1,0 +1,16 @@
+<launch>
+
+    <!-- send excavaROB urdf to param server -->
+    <include file="$(find excavaROB_description)/launch/upload_excavaROB.launch" />
+
+    <node name="excavaROB_arm_kinematics" pkg="excavaROB_arm_kinematics" type="excavaROB_arm_kinematics"  output="screen">    
+	<param name="tip_name" value="bucket_link" />
+<!--	<param name="wrist_name" value="stick_link" />     -->
+	<param name="root_name" value="drivetrain_link" />  
+	<param name="max_iterations" value="5000"/>
+	<param name="eps" value="0.001"/>
+	<param name="ik_gain" value="1.0"/>
+	<param name="damping" value="0.1"/>
+    </node>
+
+</launch>

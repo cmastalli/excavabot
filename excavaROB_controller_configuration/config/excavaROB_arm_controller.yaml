@@ -1,0 +1,31 @@
+arm_controller:
+  type: "robot_mechanism_controllers/JointTrajectoryActionController"
+  joints:
+    - turret_drivetrain_joint
+    - boom_turret_joint
+    - stick_boom_joint
+    - bucket_stick_joint
+
+  gains:
+    turret_drivetrain_joint: {p: 802400.0, d: 1294800.0, i: 54000.0, i_clamp: 84000.0}
+    boom_turret_joint: {p: 682400.0, d: 1044800.0, i: 84000.0, i_clamp: 280000.0}
+    stick_boom_joint: {p: 142400.0, d: 184800.0, i: 74000.0, i_clamp: 202000.0}
+    bucket_stick_joint: {p: 102400.0, d: 164800.0, i: 54000.0, i_clamp: 166000.0}
+
+  joint_trajectory_action_node:
+    joints:
+      - turret_drivetrain_joint
+      - boom_turret_joint
+      - stick_boom_joint
+      - bucket_stick_joint
+
+    constraints:
+      goal_time: 0.6
+      turret_drivetrain_joint:
+        goal: 0.02
+      boom_turret_joint:
+        goal: 0.02
+      stick_boom_joint:
+        goal: 0.02
+      bucket_stick_joint:
+        goal: 0.02

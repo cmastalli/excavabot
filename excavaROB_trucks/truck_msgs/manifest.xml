@@ -1,0 +1,16 @@
+<package>
+  <description brief="truck_msgs">
+
+     truck_msgs
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/truck_msgs</url>
+
+  <depend package="geometry_msgs"/>
+
+</package>
+
+

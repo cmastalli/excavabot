@@ -1,0 +1,27 @@
+<launch>
+
+
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+
+  <!-- set use_sim_time flag -->
+  <group if="$(arg use_sim_time)">
+    <param name="/use_sim_time" value="true" />
+  </group>
+
+  <env name="GAZEBO_RESOURCE_PATH" value="$(find excavaROB_description)/Media/scripts:$(find pr2_ogre):$(find gazebo)/gazebo/share/gazebo" />
+
+  <!-- empty world -->
+  <node name="gazebo" pkg="gazebo" type="gazebo" 
+        args="-u $(find excavaROB_description)/worlds/terrain.world" output="screen" respawn="false" />
+
+  <!-- start gui -->
+  <group if="$(arg gui)">
+    <node name="gazebo_gui" pkg="gazebo" type="gui" respawn="false" output="screen"/>
+  </group>    
+  
+  <!-- send excavaROB urdf to param server -->
+  <include file="$(find excavaROB_description)/launch/upload_excavaROB.launch" />
+
+
+</launch>

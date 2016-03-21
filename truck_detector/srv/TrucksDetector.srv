@@ -1,0 +1,3 @@
+truck_msgs/Truck truck
+---
+truck_msgs/Truck[] trucks

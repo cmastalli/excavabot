@@ -1,0 +1,32 @@
+<package>
+  <description brief="dmp_controller">
+
+     dmp_controller
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/dmp_controller</url>
+
+
+  <depend package="roscpp"/>
+  <rosdep name="eigen"/>
+  <depend package="pr2_controller_interface"/>
+  <depend package="realtime_tools"/>
+  <depend package="pr2_mechanism_model"/>
+  <depend package="pluginlib"/>
+  <depend package="control_toolbox"/>
+  <depend package="dynamic_movement_primitives"/>
+  <depend package="angles"/>
+
+
+  <export>
+    <cpp cflags="-I${prefix}/include"
+	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ldmp_controller" />
+    <pr2_controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
+
+</package>
+
+

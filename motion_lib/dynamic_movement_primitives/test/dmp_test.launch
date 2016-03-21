@@ -1,0 +1,7 @@
+<launch>
+ 
+  <node pkg="dynamic_movement_primitives" type="dmp_test" name="dmp_test" output="screen">				
+    <rosparam command="load" file="$(find dynamic_movement_primitives)/test/dmp_test.yaml" />
+  </node>
+
+</launch>

@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/devel/setup.sh

@@ -1,0 +1,9 @@
+<stack>
+  <description brief="excavaROB_arm_navigation">excavaROB_arm_navigation</description>
+  <author>Maintained by Carlos Mastalli</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_arm_navigation</url>
+  <depend stack="ros" />
+
+</stack>

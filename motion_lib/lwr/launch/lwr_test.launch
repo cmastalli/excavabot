@@ -1,0 +1,7 @@
+<launch>
+ 
+  <node pkg="lwr" type="lwr_regression_test" name="lwr_test" output="screen">				
+    <rosparam command="load" file="$(find lwr)/launch/lwr_test.yaml" />
+  </node>
+
+</launch>

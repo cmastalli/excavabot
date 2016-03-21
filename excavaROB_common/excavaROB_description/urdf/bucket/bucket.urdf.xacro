@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+       sensor and controller plugin specifications -->
+  <include filename="$(find excavaROB_description)/urdf/bucket/bucket.transmission.xacro" />
+
+  <!--========================== BUCKET ===============================-->
+  <!-- Bucket Reference Systems with respect to World Refence Systems -->
+  <property name="bucket_cs_x" value="6.68486" />
+  <property name="bucket_cs_y" value="-0.40005" />
+  <property name="bucket_cs_z" value="2.51217" /> <!-- 6.68486,2.51217,0.40005 -->
+  <!-- Bucket Center of Gravity with respect to World Refence Systems -->
+  <property name="bucket_cg_x" value="6.69027" />
+  <property name="bucket_cg_y" value="-0.400051" />
+  <property name="bucket_cg_z" value="2.53842" /> <!-- 6.69027,2.53842,0.400051 -->
+  <!-- Bucket-Turret Center of Rotation with respect to World Refence Systems -->
+  <property name="bucket_stick_cr_x" value="7.52506" />
+  <property name="bucket_stick_cr_y" value="-0.40005" />
+  <property name="bucket_stick_cr_z" value="2.68194" /> <!-- 7.52506,2.68194,0.40005 -->
+  <property name="bucket_posO" value="85" />
+
+
+  <xacro:macro name="excavaROB_bucket" params="parent">
+  <!-- Bucket Stick Joint -->
+	<joint name="bucket_${parent}_joint" type="revolute">
+		<parent link="${parent}_link" />
+		<child link="bucket_link" />
+		<axis xyz="0 -1 0" />
+		<origin rpy="0 ${-bucket_posO*PI/180} 0" xyz="${bucket_stick_cr_x-stick_boom_cr_x}
+					 		      ${bucket_stick_cr_y-stick_boom_cr_y}
+					 		      ${bucket_stick_cr_z-stick_boom_cr_z}" />
+		<limit effort="100000.0" lower="${(65-bucket_posO)*PI/180}" upper="${(180-bucket_posO)*PI/180}" velocity="0.5" /> <!-- AJUSTAR -->
+		<!--<safety_controller k_position="20" k_velocity="4" soft_upper_limit="${(180-bucket_posO)*PI/180 - 0.10}" 
+								  soft_lower_limit="${(65+bucket_posO)*PI/180 + 0.10}" />-->
+		<dynamics damping="1" friction="100" />
+		<calibration falling="${0}" />
+	</joint>
+
+  <!-- Bucket Link -->
+	<link name="bucket_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${bucket_cs_x-bucket_stick_cr_x}
+			       			 ${bucket_cs_y-bucket_stick_cr_y}
+			      			 ${bucket_cs_z-bucket_stick_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/bucket/bucket.dae" scale="100 100 100"/>
+			</geometry>
+			<material name="Grey" />
+		</visual>
+		<inertial>
+			<mass value="531.454" /> <!--531.454/186.01-->
+			<origin rpy="0 0 0" xyz="${bucket_cg_x-bucket_stick_cr_x} 
+			       			 ${bucket_cg_y-bucket_stick_cr_y}
+			      			 ${bucket_cg_z-bucket_stick_cr_z}" />
+			<inertia ixx="128.095" ixy="17.5431" ixz="-4.92943e-005"
+				 iyy="202.671" iyz="-5.98946e-005" izz="130.741" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${bucket_cs_x-bucket_stick_cr_x} 
+			       			 ${bucket_cs_y-bucket_stick_cr_y}
+			      			 ${bucket_cs_z-bucket_stick_cr_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/bucket/bucket.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="bucket_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+
+    <xacro:excavaROB_bucket_transmission parent="${parent}" />
+  </xacro:macro>
+
+</robot>

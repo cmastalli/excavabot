@@ -1,0 +1,99 @@
+
+#include <dynamic_movement_primitives/transformation_system.h>
+
+
+namespace dmp
+{
+
+TransformationSystem::TransformationSystem() :
+    initialized_(false), trans_sys_id_(-1), k_gain_(0.0), d_gain_(0.0), v_(0.0),
+    vd_(0.0), x_(0.0), xd_(0.0), xdd_(0.0), xt_(0.0), xtd_(0.0), xtdd_(0.0),
+    x0_(0.0), initial_x0_(0.0), goal_(0.0), initial_goal_(0.0), f_(0.0), ft_(0.0)
+{
+}
+
+TransformationSystem::~TransformationSystem() {
+}
+
+
+bool TransformationSystem::initialize(ros::NodeHandle& node_handle, int trans_sys_id)
+{
+    if (initialized_)
+        ROS_WARN("Transformation system already initialized. Reinitializing with new parameters.");
+
+    trans_sys_id_ = trans_sys_id;
+
+    ros::NodeHandle nh_trans_sys(node_handle, "transformation_systems");
+    // get K
+    if (!nh_trans_sys.getParam("K", k_gain_)) {
+        ROS_ERROR("Could not get the K gain from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+    else if (k_gain_ <= 0) {
+        ROS_ERROR("The value of K must be positive.");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // get D
+    if (!nh_trans_sys.getParam("D", d_gain_)) {
+        ROS_ERROR("Could not get the D gain from parameter server.");
+        initialized_ = false;
+        return initialized_;
+    }
+    else if (d_gain_ <= 0) {
+        ROS_ERROR("The value of D must be positive.");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    // initialize lwr model
+    if (!lwr_model_.initialize(node_handle)) {
+        ROS_ERROR("Could not initialized the LWR model.");
+        initialized_ = false;
+        return initialized_;
+    }
+
+    target_function_.clear();
+
+    initialized_ = true;
+    return initialized_;
+}
+
+bool TransformationSystem::initFromMessage(const dynamic_movement_primitives::TransformationSystem& trans_sys)
+{
+    initialized_ = trans_sys.initialized;
+    trans_sys_id_ = trans_sys.trans_sys_id;
+    k_gain_ = trans_sys.k_gain;
+    d_gain_ = trans_sys.d_gain;
+
+    if (!lwr_model_.initFromMessage(trans_sys.lwr_model)) {
+        ROS_ERROR("Could not intialized the transformation system %i.", trans_sys_id_);
+        return false;
+    }
+
+    return true;
+}
+
+bool TransformationSystem::writeToMessage(dynamic_movement_primitives::TransformationSystem& trans_sys)
+{
+    if (!initialized_) {
+        ROS_ERROR("Could not write because it need initialized the transformation system.");
+        return initialized_;
+    }
+
+    trans_sys.initialized = initialized_;
+    trans_sys.trans_sys_id = trans_sys_id_;
+    trans_sys.k_gain = k_gain_;
+    trans_sys.d_gain = d_gain_;
+
+    if (!lwr_model_.writeToMessage(trans_sys.lwr_model)) {
+        ROS_ERROR("Could not write the LWR model of transformation system %i.", trans_sys_id_);
+        return false;
+    }
+
+    return true;
+}
+
+} // @namespace dmp

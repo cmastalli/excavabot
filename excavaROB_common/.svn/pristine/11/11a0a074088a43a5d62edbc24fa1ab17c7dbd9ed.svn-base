@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="excavaROB_bucket_transmission" params="parent">
+
+    <!-- Bucket Stick Transmission -->
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="bucket_${parent}_trans">
+      <joint name="bucket_${parent}_joint"/>
+      <actuator name="bucket_${parent}_motor"/>
+      <mechanicalReduction>${1}</mechanicalReduction><!--  / cal_r_shoulder_pan_gearing -->
+<!--      <compensator k_belt="4000.0" mass_motor="0.05" kd_motor="15.0" lambda_motor="40.0" lambda_joint="40.0" lambda_combined="0.0"/>-->
+    </transmission>
+
+  </xacro:macro>
+
+</robot>

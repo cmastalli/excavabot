@@ -1,0 +1,14 @@
+test_parameters:
+
+  num_data_learn: 1000
+  num_data_query: 2000
+  mse_prediction_error_threshold: 200.3
+  mse_rescaling_error_threshold: 0.0001
+
+  lwr:
+    path_name: /home/cmastalli/ROS_myThesis/motion_lib/lwr/test/data_test/
+    num_rfs: 100
+    can_sys_cutoff: 0.001
+    rfs_width_boundary: 0.5
+    exponentially_spaced: true
+

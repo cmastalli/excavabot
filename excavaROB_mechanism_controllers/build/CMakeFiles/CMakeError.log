@@ -1,0 +1,57 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1075567414/fast"
+make[1]: Entering directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1075567414.dir/build.make CMakeFiles/cmTryCompileExec1075567414.dir/build
+make[2]: Entering directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1075567414.dir/CheckSymbolExists.c.o
+/usr/bin/gcc    -o CMakeFiles/cmTryCompileExec1075567414.dir/CheckSymbolExists.c.o   -c /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1075567414
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1075567414.dir/link.txt --verbose=1
+/usr/bin/gcc         CMakeFiles/cmTryCompileExec1075567414.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1075567414 -rdynamic 
+CMakeFiles/cmTryCompileExec1075567414.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x16): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+make[2]: *** [cmTryCompileExec1075567414] Error 1
+make[2]: Leaving directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+make[1]: *** [cmTryCompileExec1075567414/fast] Error 2
+make[1]: Leaving directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+
+File /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec243972354/fast"
+make[1]: Entering directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec243972354.dir/build.make CMakeFiles/cmTryCompileExec243972354.dir/build
+make[2]: Entering directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec243972354.dir/CheckFunctionExists.c.o
+/usr/bin/gcc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec243972354.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-2.8/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec243972354
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec243972354.dir/link.txt --verbose=1
+/usr/bin/gcc     -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec243972354.dir/CheckFunctionExists.c.o  -o cmTryCompileExec243972354 -rdynamic -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[2]: *** [cmTryCompileExec243972354] Error 1
+make[2]: Leaving directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+make[1]: *** [cmTryCompileExec243972354/fast] Error 2
+make[1]: Leaving directory `/home/cmastalli/ros_workspace/excavabot/excavaROB_mechanism_controllers/build/CMakeFiles/CMakeTmp'
+
+

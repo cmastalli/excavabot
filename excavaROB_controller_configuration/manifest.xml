@@ -1,0 +1,17 @@
+<package>
+  <description brief="excavaROB_controller_configuration">
+
+     excavaROB_controller_configuration
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_controller</url>
+
+  <platform os="ubuntu" version="9.04"/>
+  <platform os="ubuntu" version="9.10"/>
+  <platform os="ubuntu" version="10.04"/>
+</package>
+
+

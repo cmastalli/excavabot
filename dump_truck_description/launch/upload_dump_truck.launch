@@ -1,0 +1,19 @@
+<launch>
+
+  <!-- send the excavaROB robot XML to param server -->
+  <param name="truck_description" command="$(find xacro)/xacro.py '$(find dump_truck_description)/robot/dump_truck.urdf.xacro'" />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_dump_truck" pkg="gazebo" type="spawn_model"
+        args="$(optenv ROBOT_INITIAL_POSE)
+	      -x -0.25
+              -y 3.0
+              -z 0
+	      -R 0
+              -Y -0.2854
+	      -unpause
+              -urdf
+              -param truck_description
+              -model dump_truck"
+        respawn="false" output="screen" />
+</launch>

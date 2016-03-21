@@ -1,0 +1,30 @@
+joint_limits:
+  turret_drivetrain_joint:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 1.0
+    angle_wraparound: false
+  boom_turret_joint:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 1.0
+    angle_wraparound: false
+  stick_boom_joint:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 1.0
+    angle_wraparound: false
+  bucket_stick_joint:
+    has_position_limits: true
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 1.0
+    angle_wraparound: false
+

@@ -1,0 +1,9 @@
+<stack>
+  <description brief="excavaROB_trucks">excavaROB_trucks</description>
+  <author>Maintained by Carlos Mastalli</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_trucks</url>
+  <depend stack="ros" />
+
+</stack>

@@ -1,0 +1,15 @@
+<launch>
+<!--	<arg name="model" />
+	<arg name="gui" default="False" />
+	<param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />-->
+
+	<arg name="gui" default="true" />
+	<param name="robot_description" command="$(find xacro)/xacro.py '$(find excavaROB_description)/Robot/excavaROB.urdf.xacro'" />
+<!--	<include file="$(find excavaROB_description)/launch/excavaROB_-_empty_world.launch" />-->
+
+	<param name="use_gui" value="$(arg gui)"/>
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find excavaROB_description)/launch/Tests/excavaROB.vcg" />
+
+</launch>

@@ -1,0 +1,58 @@
+<launch>
+
+
+  <!-- controller manager -->
+  <include file="$(find excavaROB_controller_configuration)/launch/excavaROB_controller_manager.launch" />
+
+  <!-- fake calibration -->
+  <node pkg="rostopic" type="rostopic" name="fake_joint_calibration"
+        args="pub /calibrated std_msgs/Bool true" />
+
+  <!-- enable stereo vision -->
+  <node ns="stereo_camera" name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen">
+    <param name="disparity_range" type="int" value="128"/>
+    <param name="approximate_sync" type="bool" value="true"/>
+  </node>
+
+  <!-- robot pose ekf -->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="publish_tf" value="true"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+    <remap from="odom" to="base_odometry/odom" />
+    <remap from="imu_data" to="drivetrain_imu/data" />
+  </node>
+
+  <!-- right laser dynamic_reconfigure -->
+  <node pkg="gazebo_plugins" type="hokuyo_node" name="right_tilt_hokuyo_node">
+    <param name="port" type="string" value="/etc/ros/sensors/right_tilt_hokuyo" />
+    <param name="frame_id" type="string" value="right_scan_point_link" />
+    <param name="min_ang" type="double" value="-0.829" />
+    <param name="max_ang" type="double" value="0.829" />
+    <param name="skip" type="int" value="1" />
+    <param name="intensity" value="true" />
+  </node>
+
+  <!-- left laser dynamic_reconfigure -->
+  <node pkg="gazebo_plugins" type="hokuyo_node" name="left_tilt_hokuyo_node">
+    <param name="port" type="string" value="/etc/ros/sensors/left_tilt_hokuyo" />
+    <param name="frame_id" type="string" value="left_scan_point_link" />
+    <param name="min_ang" type="double" value="-0.829" />
+    <param name="max_ang" type="double" value="0.829" />
+    <param name="skip" type="int" value="1" />
+    <param name="intensity" value="true" />
+  </node>
+
+  <!-- buffer server -->
+  <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
+    <param name="buffer_size" value="120.0"/>
+  </node>
+
+  <!-- spawns the synchronizer -->
+  <node type="camera_synchronizer" name="camera_synchronizer_node" pkg="gazebo_plugins" output="screen" />
+
+
+</launch>

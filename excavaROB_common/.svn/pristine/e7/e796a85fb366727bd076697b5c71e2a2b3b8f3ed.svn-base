@@ -1,0 +1,346 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+       sensor and controller plugin specifications -->
+  <include filename="$(find excavaROB_description)/urdf/drive/drive.transmission.xacro" />
+  <include filename="$(find excavaROB_description)/urdf/drive/drive.gazebo.xacro" />
+
+  <property name="PI" value="3.141593" />
+
+  <!--========================== DRIVETRAIN ===============================-->
+  <!-- DriveTrain Reference Systems with respect to World Refence Systems -->
+  <property name="drivetrain_cs_x" value="-0.674279" />
+  <property name="drivetrain_cs_y" value="0" /> <!-- 0 -->
+  <property name="drivetrain_cs_z" value="0.381001" /> <!-- 0.381001 -->
+  <!-- DriveTrain Center of Gravity and Rotation with respect to World Refence Systems  -->
+  <property name="drivetrain_cgr_x" value="-0.293301" />
+  <property name="drivetrain_cgr_y" value="0" /> <!-- 0.48143 -->
+  <property name="drivetrain_cgr_z" value="0.48143" /> <!-- 0 -->
+
+  <!--========================== FRONTWHEELS ===============================-->
+  <!-- FrontWheels Reference Systems and Center of Gravity with respect to World Refence Systems  -->
+  <property name="front_wheel_csg_x" value="1.35532" />
+  <property name="front_wheel_csg_y" value="-1.13268" /> <!-- 0.381001 -->
+  <property name="front_wheel_csg_z" value="0.381001" /> <!-- 1.13268 -->
+  <!-- Right FrontWheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="right_front_wheel_cr_x" value="1.35532" />
+  <property name="right_front_wheel_cr_y" value="-1.02075" /> <!-- 0.381001 -->
+  <property name="right_front_wheel_cr_z" value="0.381001" /> <!-- 1.02075 -->
+  <!-- Left FrontWheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="left_front_wheel_cr_x" value="1.35532" />
+  <property name="left_front_wheel_cr_y" value="1.02075" /><!-- 0.381001 -->
+  <property name="left_front_wheel_cr_z" value="0.381001" /><!-- -1.02075 -->
+
+  <!--========================== DRIVEWHEELS ===============================-->
+  <!-- DriveWheels Reference Systems and Center of Gravity with respect to World Refence Systems  -->
+  <property name="drive_wheel_csg_x" value="-1.51883" />
+  <property name="drive_wheel_csg_y" value="-1.21896" /> <!-- 0.38101 -->
+  <property name="drive_wheel_csg_z" value="0.38101" /> <!-- 1.21896 -->
+  <!-- Right DriveWheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="right_drive_wheel_cr_x" value="-1.51883" />
+  <property name="right_drive_wheel_cr_y" value="-0.93345" /> <!-- 0.381001 -->
+  <property name="right_drive_wheel_cr_z" value="0.381001" /> <!-- 0.93345 -->
+  <!-- Left DriveWheel Center of Rotation with respect to World Refence Systems  -->
+  <property name="left_drive_wheel_cr_x" value="-1.51883" />
+  <property name="left_drive_wheel_cr_y" value="0.93345" /> <!-- 0.381001 -->
+  <property name="left_drive_wheel_cr_z" value="0.381001" /> <!-- -0.93345 -->
+
+  <!--========================== DRIVETRACK ===============================-->
+  <!-- DriveTrack Reference Systems with respect to World Refence Systems  -->
+  <property name="drivetrack_cs_x" value="-0.674279" />
+  <property name="drivetrack_cs_y" value="1.12712" /> <!-- 0.381001 -->
+  <property name="drivetrack_cs_z" value="0.381001" /> <!-- 1.12712 -->
+  <!-- DriveTrack Center of Gravity with respect to World Refence Systems  -->
+  <property name="drivetrack_cg_x" value="-0.0814685" />
+  <property name="drivetrack_cg_y" value="1.12712" /> <!-- 0.427585 -->
+  <property name="drivetrack_cg_z" value="0.427585" /> <!-- 1.12712 -->
+  <!-- DriveTrack Center of Rotation with respect to World Refence Systems  -->
+  <property name="drivetrack_cr_x" value="-0.674279" />
+  <property name="drivetrack_cr_y" value="0" /> <!-- 0.381001 -->
+  <property name="drivetrack_cr_z" value="0.381001" /> <!-- 0 -->
+
+
+  <xacro:macro name="excavaROB_wheel" params="side type scale reflect mass *origin_joint *origin_link *inertia *origin_inertia *origin_collision">
+    <!-- Drivetrain-Wheels Joint -->
+    <joint name="${side}_${type}_wheel_drivetrain_joint" type="continuous">
+      <parent link="drivetrain_link"/>
+      <child link="${side}_${type}_wheel_link"/>
+      <axis xyz="0 0 ${reflect}"/>
+      <insert_block name="origin_joint" />
+      <cfm>0.00000017</cfm>
+      <erp>0.17</erp>
+<!--      <limit effort="450000" velocity="10" k_velocity="0" />--><!-- REVISAR LIMITES -->
+<!--      <joint_properties damping="0.0" friction="0.0" />-->
+    </joint>
+
+    <!-- Wheels Link -->
+    <link name="${side}_${type}_wheel_link">
+      <visual>
+	<insert_block name="origin_link" />
+	<geometry>
+	  <mesh filename="package://excavaROB_description/meshes/drive/${side}_${type}_wheel.dae"/>
+	</geometry>
+	<material name="Yellow" />
+      </visual>
+      <inertial>
+	<insert_block name="origin_inertia" />
+	<mass value="${mass}" />
+	<insert_block name="inertia" />
+      </inertial>
+      <collision>
+	<insert_block name="origin_collision" />
+	<geometry>
+	  <cylinder length="${0.1778*scale}" radius="0.381001"/>
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="${side}_${type}_wheel_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+
+  <!-- extensions -->
+    <xacro:excavaROB_wheel_gazebo side="${side}" type="${type}" />
+    <xacro:excavaROB_drive_transmission side="${side}" type="${type}" reflect="${reflect}" />
+  </xacro:macro>
+
+  <xacro:macro name="excavaROB_track" params="side reflect"> <!-- For right side reflects=1 and for left side reflects=-1 -->
+    <!-- DriveTrack Joint-->
+    <joint name="${side}_drivetrack_drivetrain_joint" type="fixed">
+      <parent link="drivetrain_link" />
+      <child link="${side}_drivetrack_link" />
+      <origin rpy="0 0 ${PI}" xyz="${drivetrack_cr_x-drivetrain_cgr_x} 
+		     	           ${drivetrack_cr_y-drivetrain_cgr_y}
+			           ${drivetrack_cr_z-drivetrain_cgr_z}" />
+    </joint>
+    <!-- DriveTrack Link -->
+    <link name="${side}_drivetrack_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="${drivetrack_cs_x-drivetrack_cr_x} 
+	       			 ${reflect*drivetrack_cs_y-drivetrack_cr_y}
+	      			 ${drivetrack_cs_z-drivetrack_cr_z}" />
+	<geometry>
+	  <mesh filename="package://excavaROB_description/meshes/drive/drivetrack.dae" />
+	</geometry>
+	<material name="Grey" />
+      </visual>
+      <inertial>
+	<mass value="1148.56" />
+	<origin rpy="0 0 0" xyz="${drivetrack_cg_x-drivetrack_cr_x} 
+	       			 ${reflect*drivetrack_cg_y-drivetrack_cr_y}
+	      			 ${drivetrack_cg_z-drivetrack_cr_z}" />
+	<inertia ixx="191.542" ixy="1.6398" ixz="-2.10286e-005"
+		 iyy="1600.85" iyz="3.11768e-006" izz="1757.72" />
+	</inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="${drivetrack_cs_x-drivetrack_cr_x} 
+	       			 ${reflect*drivetrack_cs_y-drivetrack_cr_y}
+			      	 ${drivetrack_cs_z-drivetrack_cr_z+.095}" /><!-- drivetrack_cs_y-drivetrack_cr_y+.095-->
+	<geometry>
+	    <box size="0.001 0.001 0.001" />
+<!--	  <mesh filename="package://excavaROB_description/meshes/drive/drivetrack.stl" />-->
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="${side}_drivetrack_link">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+  </xacro:macro>
+
+
+  <xacro:macro name="excavaROB_traction" params="name">
+    <!-- Traction Joint -->
+    <joint name="${name}_drivetrain_joint" type="fixed">
+      <parent link="drivetrain_link" />
+      <child link="${name}_link" />
+      <origin rpy="0 0 0" xyz="${right_drive_wheel_cr_x-drivetrain_cgr_x} 0 ${right_drive_wheel_cr_z-drivetrain_cgr_z}" />
+    </joint>
+    <!-- Traction Link -->
+    <link name="${name}_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	  <box size="0.001 0.001 0.001" />
+	</geometry>
+	<material name="Yellow" />
+      </visual>
+      <inertial>
+	  <mass value="1.0" />
+	  <origin xyz="0 0 0" />
+	  <inertia ixx="0.01" ixy="0.01" ixz="0.01" iyy="0.01" iyz="0.01" izz="0.01" />
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="0 0 0" />
+	<geometry>
+	  <box size="0.001 0.001 0.001" />
+	</geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="excavaROB_drive" params="name">
+    <!-- FootPrint Joint-->
+    <joint name="${name}_footprint_joint" type="fixed">
+      <parent link="${name}_footprint" />
+      <child link="drivetrain_link" />
+      <origin rpy="0 0 0" xyz="${drivetrain_cgr_x} ${drivetrain_cgr_y} ${drivetrain_cgr_z}" />
+    </joint>
+
+    <!-- Virtual FootPrint Link -->
+      <link name="${name}_footprint">
+	<visual>
+	  <origin rpy="0 0 0" xyz="0 0 0" />
+	  <geometry>
+	    <box size="0.001 0.001 0.001" />
+	  </geometry>
+	</visual>
+<!--	<inertial>
+	  <mass value="1.0" />
+	  <origin xyz="0 0 0" />
+	  <inertia ixx="0.01" ixy="0.01" ixz="0.01"
+		   iyy="0.01" iyz="0.01" izz="0.01" />
+	</inertial>-->
+	<collision>
+	  <origin rpy="0 0 0" xyz="0 0 0" />
+	  <geometry>
+	    <box size="0.001 0.001 0.001" />
+	  </geometry>
+	</collision>
+      </link>
+    <!-- DriveTrain Link -->
+    <link name="drivetrain_link">
+      <visual>
+	<origin rpy="0 0 0" xyz="${drivetrain_cs_x-drivetrain_cgr_x} 
+	       			 ${drivetrain_cs_y-drivetrain_cgr_y}
+	      			 ${drivetrain_cs_z-drivetrain_cgr_z}" />
+	<geometry>
+	  <mesh filename="package://excavaROB_description/meshes/drive/drivetrain.dae" />
+	</geometry>
+	<material name="Yellow" />
+      </visual>
+      <inertial>
+	<mass value="23318.96" /> <!--4318.96-->
+	<origin rpy="0 0 0" xyz="${drivetrain_cgr_x-drivetrain_cgr_x-1}
+	       			 ${drivetrain_cgr_y-drivetrain_cgr_y}
+	      			 ${drivetrain_cgr_z-drivetrain_cgr_z}" />
+	<inertia ixx="7933.21" ixy="220.487"    ixz="0.032699"
+		 iyy="16586.74" iyz="0.0092075" izz="10087.35" />
+<!--	<inertia ixx="2781.34" ixy="77.3016"    ixz="0.0114434"
+		 iyy="5815.22" iyz="0.00322811" izz="3536.57" />-->
+      </inertial>
+      <collision>
+	<origin rpy="0 0 0" xyz="${drivetrain_cs_x-drivetrain_cgr_x} 
+	       			 ${drivetrain_cs_y-drivetrain_cgr_y}
+	      			 ${drivetrain_cs_z-drivetrain_cgr_z}" />
+	<geometry>
+	  <mesh filename="package://excavaROB_description/meshes/drive/drivetrain.stl" />
+	</geometry>
+      </collision>
+    </link>
+    <gazebo reference="drivetrain_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+
+    <!-- MACROs -->
+    <!-- Virtual traction point -->
+    <xacro:excavaROB_traction name="traction_point" />
+
+    <!-- Right FrontWheel -->
+    <xacro:excavaROB_wheel side="right" type="front" scale="1.759" reflect="1" mass="120.64">
+      <origin rpy="${-PI/2} 0 0" xyz="${right_front_wheel_cr_x-drivetrain_cgr_x} 
+			              ${right_front_wheel_cr_y-drivetrain_cgr_y}
+			              ${right_front_wheel_cr_z-drivetrain_cgr_z}" /> <!-- Joint Origin -->
+      <origin rpy="0 0 0" xyz="${front_wheel_csg_x-right_front_wheel_cr_x}
+			       ${front_wheel_csg_z-right_front_wheel_cr_z}
+			       ${front_wheel_csg_y-right_front_wheel_cr_y}" /> <!-- Link Origin -->
+     <inertia ixx="5.57713" ixy="0.0" ixz="0.0" iyy="5.57713" iyz="0.0" izz="9.95911" />
+      <origin rpy="0 0 0" xyz="${front_wheel_csg_x-right_front_wheel_cr_x}
+			       ${front_wheel_csg_z-right_front_wheel_cr_z}
+			       ${front_wheel_csg_y-right_front_wheel_cr_y}" /> <!-- Inertia Origin -->
+      <origin rpy="0 0 0" xyz="${front_wheel_csg_x-right_front_wheel_cr_x}
+			       ${front_wheel_csg_z-right_front_wheel_cr_z}
+			       ${front_wheel_csg_y-right_front_wheel_cr_y}" /> <!-- Collision Origin -->
+    </xacro:excavaROB_wheel>
+
+    <!-- Left FrontWheel -->
+    <xacro:excavaROB_wheel side="left" type="front" scale="1.759" reflect="1" mass="120.64">
+      <origin rpy="${-PI/2} 0 0" xyz="${left_front_wheel_cr_x-drivetrain_cgr_x} 
+			              ${left_front_wheel_cr_y-drivetrain_cgr_y}
+			              ${left_front_wheel_cr_z-drivetrain_cgr_z}" /> <!-- Joint Origin -->
+      <origin rpy="0 0 0" xyz="${front_wheel_csg_x-left_front_wheel_cr_x}
+			       ${front_wheel_csg_z-left_front_wheel_cr_z}
+			       ${-front_wheel_csg_y-left_front_wheel_cr_y}" /> <!-- Link Origin -->
+      <inertia ixx="5.57713" ixy="0.0" ixz="0.0" iyy="5.57713" iyz="0.0" izz="9.95911" />
+      <origin rpy="0 0 0" xyz="${front_wheel_csg_x-left_front_wheel_cr_x}
+			       ${front_wheel_csg_z-left_front_wheel_cr_z}
+			       ${-front_wheel_csg_y-left_front_wheel_cr_y}" /> <!-- Inertia Origin -->
+      <origin rpy="0 0 0" xyz="${front_wheel_csg_x-left_front_wheel_cr_x}
+			       ${front_wheel_csg_z-left_front_wheel_cr_z}
+			       ${-front_wheel_csg_y-left_front_wheel_cr_y}" /> <!-- Collision Origin -->
+    </xacro:excavaROB_wheel>
+
+    <!-- Right DriveWheel -->
+   <xacro:excavaROB_wheel side="right" type="drive" scale="1.759" reflect="1" mass="189.534">
+      <origin rpy="${-PI/2} 0 0" xyz="${right_drive_wheel_cr_x-drivetrain_cgr_x} 
+			              ${right_drive_wheel_cr_y-drivetrain_cgr_y}
+			              ${right_drive_wheel_cr_z-drivetrain_cgr_z}" /> <!-- Joint Origin -->
+      <origin rpy="0 0 0" xyz="${drive_wheel_csg_x-right_drive_wheel_cr_x}
+			       ${drive_wheel_csg_z-right_drive_wheel_cr_z}
+			       ${drive_wheel_csg_y-right_drive_wheel_cr_y}" /> <!-- Link Origin -->
+      <inertia ixx="35.8765" ixy="-8.7847e-7" ixz="-1.00903e-7"
+               iyy="35.8765" iyz="2.0465e-8"  izz="53.8086" />
+<!--      <inertia ixx="17.7005" ixy="-4.33416e-007" ixz="-1.00903e-007"
+               iyy="17.7005" iyz="1.0097e-008"   izz="26.5477" />-->
+      <origin rpy="0 0 0" xyz="${drive_wheel_csg_x-right_drive_wheel_cr_x}
+			       ${drive_wheel_csg_z-right_drive_wheel_cr_z}
+			       ${drive_wheel_csg_y-right_drive_wheel_cr_y}" /> <!-- Inertia Origin -->
+      <origin rpy="0 0 0" xyz="${drive_wheel_csg_x-right_drive_wheel_cr_x}
+			       ${drive_wheel_csg_z-right_drive_wheel_cr_z}
+			       ${drive_wheel_csg_y-right_drive_wheel_cr_y+0.0960253}" /> <!-- Collision Origin -->
+    </xacro:excavaROB_wheel>
+
+    <!-- Left DriveWheel -->
+    <xacro:excavaROB_wheel side="left" type="drive" scale="1.759" reflect="1" mass="189.534">
+      <origin rpy="${-PI/2} 0 0" xyz="${left_drive_wheel_cr_x-drivetrain_cgr_x} 
+			              ${left_drive_wheel_cr_y-drivetrain_cgr_y}
+			              ${left_drive_wheel_cr_z-drivetrain_cgr_z}" /> <!-- Joint Origin -->
+      <origin rpy="0 0 0" xyz="${drive_wheel_csg_x-left_drive_wheel_cr_x}
+			       ${drive_wheel_csg_z-left_drive_wheel_cr_z}
+			       ${-drive_wheel_csg_y-left_drive_wheel_cr_y}" /> <!-- Link Origin -->
+      <inertia ixx="35.8765" ixy="-8.7847e-7" ixz="-1.00903e-7"
+               iyy="35.8765" iyz="2.0465e-8"  izz="53.8086" />
+<!--      <inertia ixx="17.7005" ixy="1.56898e-007" ixz="5.66461e-007"
+               iyy="17.7005" iyz="2.00846e-007" izz="26.5477" />-->
+      <origin rpy="0 0 0" xyz="${drive_wheel_csg_x-left_drive_wheel_cr_x}
+			       ${drive_wheel_csg_z-left_drive_wheel_cr_z}
+			       ${-drive_wheel_csg_y-left_drive_wheel_cr_y}" /> <!-- Inertia Origin -->
+      <origin rpy="0 0 0" xyz="${drive_wheel_csg_x-left_drive_wheel_cr_x}
+			       ${drive_wheel_csg_z-left_drive_wheel_cr_z}
+			       ${-drive_wheel_csg_y-left_drive_wheel_cr_y-0.0960253}" /> <!-- Collision Origin -->
+    </xacro:excavaROB_wheel>
+
+    <!-- Right DriveTrack -->
+    <xacro:excavaROB_track side="right" reflect="1" />
+
+    <!-- Left DriveTrack -->
+    <xacro:excavaROB_track side="left" reflect="-1" />
+
+    <!-- gazebo extensions -->
+    <xacro:excavaROB_drive_gazebo name="traction_point" />
+
+    <!-- imu -->
+    <xacro:microstrain_3dmgx2_imu name="imu" parent="drivetrain" imu_topic="drivetrain_imu/data" update_rate="100.0" stdev="0.00017" >
+        <origin xyz="0 0 0" rpy="0 ${PI} 0" />
+    </xacro:microstrain_3dmgx2_imu>
+
+  </xacro:macro>
+</robot>
+
+

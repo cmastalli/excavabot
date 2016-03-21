@@ -1,0 +1,26 @@
+<package>
+  <description brief="lwr">
+
+     This package implement the Locally Weighted Regression algorithm develop by
+     Christopher G. Atkeson, Andrew W. Moore and Stefan Schaal in the paper 
+     "Locally Weighted Regression". Where it's implemented the Gaussian Kernel.
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/lwr</url>
+
+  <depend package="roscpp"/>
+  <rosdep name="eigen" /> <!--<depend package="eigen"/>-->
+  <depend package="rosbag"/>  
+<!--  <depend package="utilities"/>  -->
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llwr"/>
+  </export>
+  
+</package>
+
+
+

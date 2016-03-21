@@ -1,0 +1,17 @@
+<package>
+  <description brief="dmp_learning">
+
+     dmp_learning
+
+  </description>
+  <author>cmastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/dmp_learning</url>
+  <depend package="roscpp"/>
+  <rosdep name="eigen"/>
+  <depend package="dynamic_movement_primitives"/>
+
+</package>
+
+

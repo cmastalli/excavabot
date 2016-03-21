@@ -1,0 +1,25 @@
+<package>
+  <description brief="dump_truck_description">
+
+     dump_truck_description
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/dump_truck_description</url>
+
+    <depend package="convex_decomposition"/>
+    <depend package="ivcon"/>
+    <depend package="urdf" />
+  <platform os="ubuntu" version="9.04"/>
+  <platform os="ubuntu" version="9.10"/>
+  <platform os="ubuntu" version="10.04"/>
+
+    <export>
+        <gazebo gazebo_media_path="${prefix}" />
+    </export>
+
+</package>
+
+

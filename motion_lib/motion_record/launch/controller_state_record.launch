@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="motion_record" type="controller_state_record" name="excavaROB_controller_state_record" output="screen">
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/controller_states/"/>
+    <param name="motion_name" value="truck_loading"/>
+  </node>
+
+</launch>

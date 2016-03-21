@@ -1,0 +1,35 @@
+min_sensor_dist: .05
+self_see_default_padding: .01
+self_see_default_scale: 1.0
+self_see_links:
+  - name: drivetrain_link
+    padding: 0.04
+  - name: turret_link
+    padding: 0.04
+  - name: boom_link
+    padding: 0.04
+  - name: stick_link
+    padding: 0.04
+  - name: bucket_link
+    padding: 0.04
+
+  - name: case_stereo_camera_link
+    padding: 0.02
+  - name: support_stereo_camera_link
+    padding: 0.02
+
+  - name: right_pantilt_laser_link
+    padding: 0.02
+  - name: support_right_laser_link
+    padding: 0.02
+  - name: right_support_link
+    padding: 0.02
+
+  - name: left_pantilt_laser_link
+    padding: 0.02
+  - name: support_left_laser_link
+    padding: 0.02
+  - name: left_support_link
+    padding: 0.02
+
+  

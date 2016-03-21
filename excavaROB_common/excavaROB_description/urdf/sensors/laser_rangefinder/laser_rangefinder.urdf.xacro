@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Laser Rangefinder Macro uses hokuyo!!!!!! macros -->
+  <include filename="$(find excavaROB_description)/urdf/sensors/laser_rangefinder/hokuyo_lx30_laser.urdf.xacro" />
+  <include filename="$(find excavaROB_description)/urdf/sensors/laser_rangefinder/laser_rangefinder.transmission.xacro" />
+
+  <!--========================== PANTILT ===============================-->
+  <!-- PanTilt Reference Systems with respect to his Joint Refence Systems -->
+  <property name="pantilt_laser_joint_cs_x" value="0.07275" />
+  <property name="pantilt_laser_joint_cs_y" value="0.078" />
+  <property name="pantilt_laser_joint_cs_z" value="0.003" /> <!-- 0.07275,0.003,-0.078 -->
+  <!-- PanTilt Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="pantilt_laser_joint_cg_x" value="0.07544" />
+  <property name="pantilt_laser_joint_cg_y" value="0.078" />
+  <property name="pantilt_laser_joint_cg_z" value="0.1318" /> <!-- 0.07544,0.1318,-0.078 -->
+  <!-- PanTilt-Support Center of Rotation with respect to World Refence Systems -->
+  <property name="pantilt_laser_support_cr_x" value="0.92725" />
+  <property name="pantilt_laser_support_cr_y" value="-1.19792" />
+  <property name="pantilt_laser_support_cr_z" value="2.1781" /> <!-- 0.92725,2.1781,1.19792 -->
+
+  <!--========================== SUPPORT ===============================-->
+  <!-- PanTilt Reference Systems with respect to his Joint Refence Systems -->
+  <property name="support_laser_joint_cs_x" value="0.02075" />
+  <property name="support_laser_joint_cs_y" value="0" />
+  <property name="support_laser_joint_cs_z" value="-0.0525" /> <!-- 0.02075,-0.0525,0 -->
+  <!-- PanTilt Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="support_laser_joint_cg_x" value="0.00437" />
+  <property name="support_laser_joint_cg_y" value="0" />
+  <property name="support_laser_joint_cg_z" value="-0.01246" /> <!-- 0.00437,-0.01246,0 -->
+  <!-- PanTilt-Support Center of Rotation with respect to World Refence Systems -->
+  <property name="support_laser_pantilt_cr_x" value="1.06125" />
+  <property name="support_laser_pantilt_cr_y" value="-1.11992" />
+  <property name="support_laser_pantilt_cr_z" value="2.3281" /> <!-- 1.06125,2.3281,1.11992 -->
+
+  <!--========================== HOKUYO ===============================-->
+  <!-- Hokuyo Reference Systems with respect to his Joint Refence Systems -->
+  <property name="hokuyo_laser_joint_cs_x" value="-0.025" />
+  <property name="hokuyo_laser_joint_cs_y" value="-0.025" />
+  <property name="hokuyo_laser_joint_cs_z" value="0" /> <!-- -0.025,0,0.025 -->
+  <!-- Hokuyo Center of Gravity with respect to his Joint Refence Systems -->
+  <property name="hokuyo_laser_joint_cg_x" value="-0.02508" />
+  <property name="hokuyo_laser_joint_cg_y" value="-0.02497" />
+  <property name="hokuyo_laser_joint_cg_z" value="0.02967" /> <!-- -0.02508,0.02967,0.02497 -->
+  <!-- Hokuyo-Support Center of Rotation with respect to World Refence Systems -->
+  <property name="hokuyo_laser_pantilt_cr_x" value="1.12875" />
+  <property name="hokuyo_laser_pantilt_cr_y" value="-1.09492" />
+  <property name="hokuyo_laser_pantilt_cr_z" value="2.2756" /> <!-- 1.12875,2.2756,1.09492 -->
+
+  <!--========================== HOKUYO SCAN POINT ===============================-->
+  <!-- Hokuyo-Support Center of Rotation with respect to World Refence Systems -->
+  <property name="hokuyo_scan_point_laser_cr_x" value="1.103750" />
+  <property name="hokuyo_scan_point_laser_cr_y" value="-1.119916" />
+  <property name="hokuyo_scan_point_laser_cr_z" value="2.328101" /> <!-- 1.103750,2.328101,1.119916 -->
+
+
+  <!-- This macro is used for creating stereo camera links -->
+  <xacro:macro name="excavaROB_laser_rangefinder" params="parent side *origin">
+  <!-- PanTiltLaser SupportRight/LeftLaser Joint -->
+	<joint name="pantilt_laser_${parent}_joint" type="fixed">
+		<parent link="${parent}_link" />
+		<child link="${side}_pantilt_laser_link" />
+		<insert_block name="origin" />
+	</joint>
+  <!-- Support PanTiltCamera Joint -->
+	<joint name="${side}_support_pantilt_laser_joint" type="revolute">
+		<parent link="${side}_pantilt_laser_link" />
+		<child link="${side}_support_link" />
+		<axis xyz="0 1 0" />
+		<origin rpy="0 0 0" xyz="${support_laser_pantilt_cr_x-pantilt_laser_support_cr_x}
+					 ${support_laser_pantilt_cr_y-pantilt_laser_support_cr_y}
+					 ${support_laser_pantilt_cr_z-pantilt_laser_support_cr_z}" />
+		<limit effort="10.0" lower="${-PI/4}" upper="${PI/4}" velocity="0.1" /><!-- AJUSTAR -->
+		<!--<safety_controller k_position="200" k_velocity="40" soft_upper_limit="${(40-boom_posO)*PI/180 - 0.10}" 
+								    soft_lower_limit="${-(25+boom_posO)*PI/180 + 0.10}" />-->
+		<dynamics damping="1" friction="10" />
+		<calibration falling="${0}" />
+	</joint>
+  <!-- Hokuyo Support Joint -->
+	<joint name="${side}_hokuyo_laser_support_joint" type="fixed">
+		<parent link="${side}_support_link" />
+		<child link="${side}_hokuyo_laser_link" />
+		<origin rpy="0 0 0" xyz="${hokuyo_laser_pantilt_cr_x-support_laser_pantilt_cr_x}
+					 ${hokuyo_laser_pantilt_cr_y-support_laser_pantilt_cr_y}
+					 ${hokuyo_laser_pantilt_cr_z-support_laser_pantilt_cr_z}" />
+	</joint>
+
+  <!-- LaserPanTilt Link -->
+	<link name="${side}_pantilt_laser_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${pantilt_laser_joint_cs_x} 
+			       			 ${pantilt_laser_joint_cs_y}
+			      			 ${pantilt_laser_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/laser_rangefinder/pantilt_laser.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="2.07076" />
+			<origin rpy="0 0 0" xyz="${pantilt_laser_joint_cg_x} 
+			       			 ${pantilt_laser_joint_cg_y}
+			      			 ${pantilt_laser_joint_cg_z}" />
+			<inertia ixx="0.0219"  ixy="-0.000573" ixz="2.9424e-8"
+				 iyy="0.01325" iyz="2.3557e-8" izz="0.02202" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${pantilt_laser_joint_cs_x} 
+			       			 ${pantilt_laser_joint_cs_y}
+			      			 ${pantilt_laser_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/laser_rangefinder/pantilt_laser.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="${side}_pantilt_laser_link">
+		<material>Gazebo/White</material>
+	</gazebo>
+  <!-- Support Link -->
+	<link name="${side}_support_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${support_laser_joint_cs_x} 
+			       			 ${support_laser_joint_cs_y}
+			      			 ${support_laser_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/laser_rangefinder/support.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="0.411993" />
+			<origin rpy="0 0 0" xyz="${support_laser_joint_cg_x} 
+			       			 ${support_laser_joint_cg_y}
+			      			 ${support_laser_joint_cg_z}" />
+			<inertia ixx="0.00112" ixy="-2.603e-5" ixz="0"
+				 iyy="0.00054" iyz="0"         izz="0.00133" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${support_laser_joint_cs_x} 
+			       			 ${support_laser_joint_cs_y}
+			      			 ${support_laser_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/laser_rangefinder/support.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="${side}_support_link">
+		<material>Gazebo/Grey</material>
+	</gazebo>
+  <!-- Hokuyo Link -->
+	<link name="${side}_hokuyo_laser_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="${hokuyo_laser_joint_cs_x} 
+			       			 ${hokuyo_laser_joint_cs_y}
+			      			 ${hokuyo_laser_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/laser_rangefinder/hokuyo_laser.dae" scale="100 100 100"/>
+			</geometry>
+			<!--<material name="Yellow" />-->
+		</visual>
+		<inertial>
+			<mass value="0.160029" />
+			<origin rpy="0 0 0" xyz="${hokuyo_laser_joint_cg_x} 
+			       			 ${hokuyo_laser_joint_cg_y}
+			      			 ${hokuyo_laser_joint_cg_z}" />
+			<inertia ixx="8.4524e-5"  ixy="2.8152e-7"  ixz="-3.2776e-8"
+				 iyy="5.4441e-5"  iyz="-8.2031e-8" izz="8.4853e-5" />
+		</inertial>
+		<collision>
+			<origin rpy="0 0 0" xyz="${hokuyo_laser_joint_cs_x} 
+			       			 ${hokuyo_laser_joint_cs_y}
+			      			 ${hokuyo_laser_joint_cs_z}" />
+			<geometry>
+				<mesh filename="package://excavaROB_description/meshes/sensors/laser_rangefinder/hokuyo_laser.stl"/>
+			</geometry>
+		</collision>
+	</link>
+	<gazebo reference="${side}_hokuyo_laser_link">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<xacro:hokuyo_lx30_laser name="${side}" parent="hokuyo_laser" ros_topic="${side}_laser/scan" update_rate="40" min_angle="-135" max_angle="135">
+		<origin rpy="0 0 0" xyz="${hokuyo_scan_point_laser_cr_x-hokuyo_laser_pantilt_cr_x}
+					 ${hokuyo_scan_point_laser_cr_y-hokuyo_laser_pantilt_cr_y}
+					 ${hokuyo_scan_point_laser_cr_z-hokuyo_laser_pantilt_cr_z}" />
+	</xacro:hokuyo_lx30_laser>
+
+	<!-- Laser transmission -->
+	<xacro:excavaROB_laser_transmission side="${side}" />
+  </xacro:macro>
+</robot>

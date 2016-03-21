@@ -1,0 +1,11 @@
+<launch> 
+
+  <include file="$(find excavaROB_machine)/$(env ROBOT).machine" />
+
+  <node machine="c2" pkg="trajectory_filter_server" name="trajectory_filter_server" type="trajectory_filter_server" output="screen">
+     <rosparam command="load" file="$(find excavaROB_arm_navigation_config)/config/joint_limits.yaml"/>
+     <rosparam command="load" file="$(find excavaROB_arm_navigation_filtering)/config/filters.yaml"/>
+     <remap from="robot_description" to="robot_description" />
+  </node>
+
+</launch>

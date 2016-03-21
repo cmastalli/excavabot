@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<robot name="dump_truck"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro" >
+
+  <!-- The following included files set up definitions of parts of the robot body -->
+  <!-- dump_truck DriveTrain: the body or chassys and wheels of truck -->
+  <include filename="$(find dump_truck_description)/urdf/drivetrain/drivetrain.urdf.xacro" />
+  <!-- dump_truck Bed: the dump bed of truck -->
+  <include filename="$(find dump_truck_description)/urdf/bed/dump_bed.urdf.xacro" />
+  <!-- Materials for visualization -->
+  <include filename="$(find dump_truck_description)/urdf/materials.urdf.xacro" />
+
+
+  <xacro:dump_truck_body name="dump_base"/>
+
+  <xacro:dump_truck_bed parent="body"/>
+
+</robot>

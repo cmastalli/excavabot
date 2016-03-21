@@ -1,0 +1,35 @@
+<package>
+  <description brief="excavaROB_mechanism_controllers">
+    The excavaROB_mechanism_controllers package contains realtime
+    controllers that are meant for specific mechanisms of the excavaROB.
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+
+  <!-- ROS Interfaces -->
+  <depend package="std_msgs" />
+  <depend package="geometry_msgs" />
+  <depend package="nav_msgs" />
+  <depend package="excavaROB_msgs" />
+
+  <!-- Plugins -->
+  <depend package="pr2_controller_interface" />
+  <depend package="pr2_mechanism_model" />
+  <depend package="robot_mechanism_controllers" />
+
+  <depend package="roscpp" />
+  <depend package="realtime_tools" />
+  <depend package="pluginlib" />
+  <depend package="tf" />
+
+  <url>http://ros.org/wiki/excavaROB_mechanism_controllers</url>
+  <export>
+    <cpp cflags="-I${prefix}/include"
+	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lexcavaROB_mechanism_controllers" />
+    <pr2_controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
+
+</package>
+
+

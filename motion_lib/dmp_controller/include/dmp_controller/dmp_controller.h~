@@ -1,0 +1,156 @@
+
+#ifndef DMP_CONTROLLER_H_
+#define DMP_CONTROLLER_H_
+
+#include <dynamic_movement_primitives/dmp.h>
+
+#include <dmp_controller/AddToExecuteDMPQueue.h>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/circular_buffer.hpp>
+
+
+namespace dmp_controller
+{
+
+struct DMPStruct
+{
+    boost::shared_ptr<dmp::DynamicMovementPrimitives> dmp;
+    double execution_time;
+};
+
+class DMPController
+{
+  public:
+    DMPController();
+
+    ~DMPController();
+
+    bool initialize(ros::NodeHandle node_handle);
+
+    bool addToExecuteDMPQueue(dmp_controller::AddToExecuteDMPQueue::Request& request, dmp_controller::AddToExecuteDMPQueue::Response& response);
+
+//    bool writeTrajectories(dmp_controller::WriteTrajectories::Request& request, dmp_controller::WriteTrajectories::Response& response);
+
+    static bool setDMPStructFromRequest(ros::NodeHandle& node_handle, dmp_controller::AddToExecuteDMPQueue::Request& request,
+					dmp_controller::AddToExecuteDMPQueue::Response& response, std::vector<DMPStruct>& dmp_structs);
+
+    void addToQueue(std::vector<DMPStruct> dmp_structs);
+
+    boost::shared_ptr<dmp::DynamicMovementPrimitives> getCurrentDMP();
+
+    double getCurrentExecutionDuration();
+
+    bool tryMutexLock();
+
+    void freeMutexLock();
+
+    void incrementSkippedCycles();
+
+    void incrementDMPQueueIndex();
+
+    bool isFirstDMPCycle();
+
+    void setStartTime(const ros::Time start_time);
+
+    void setEndTime(const ros::Time end_time);
+
+    std::string getDMPName();
+
+
+  private:
+    ros::NodeHandle node_handle_;
+
+    ros::ServiceServer add_to_execute_dmp_queue_server_;
+
+    boost::circular_buffer<DMPStruct> run_buffer_;
+
+    pthread_mutex_t dmp_cmd_lock_;
+
+    bool is_first_dmp_cycle_;
+
+    int skipped_updates_;
+
+    ros::Time start_time_, end_time_;
+
+
+}; //@class DMPController
+
+
+inline boost::shared_ptr<dmp::DynamicMovementPrimitives> DMPController::getCurrentDMP()
+{
+    return run_buffer_.front().dmp;
+}
+
+
+inline double DMPController::getCurrentExecutionDuration()
+{
+    return run_buffer_.front().execution_time;
+}
+
+
+inline bool DMPController::tryMutexLock()
+{
+    if (pthread_mutex_trylock(&dmp_cmd_lock_) == 0) {
+	if (!run_buffer_.empty()) {
+	    return true;
+	}
+    }
+
+    return false;
+}
+
+
+inline void DMPController::freeMutexLock()
+{
+    pthread_mutex_unlock(&dmp_cmd_lock_);
+}
+
+
+inline void DMPController::incrementSkippedCycles()
+{
+    skipped_updates_++;
+}
+
+
+inline void DMPController::incrementDMPQueueIndex()
+{
+//    publishStatistics();
+    run_buffer_.pop_front();
+
+    ros::Duration(1.5).sleep();
+    is_first_dmp_cycle_ = true;
+}
+
+
+inline bool DMPController::isFirstDMPCycle()
+{
+    if (is_first_dmp_cycle_) {
+	is_first_dmp_cycle_ = false;
+	return true;
+    }
+    return false;
+}
+
+
+inline void DMPController::setStartTime(const ros::Time start_time)
+{
+    start_time_ = start_time;
+}
+
+
+inline void DMPController::setEndTime(const ros::Time start_time)
+{
+    end_time_ = start_time;
+}
+
+
+inline std::string DMPController::getDMPName()
+{
+    return run_buffer_.front().dmp->getDMPId();
+}
+
+
+} //@namespace dmp_controller
+
+#endif //DMP_CONTROLLER_H_

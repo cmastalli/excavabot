@@ -1,0 +1,14 @@
+<launch>
+
+
+  <node pkg="motion_record" type="motion_record" name="excavaROB_motion_record" output="screen">
+    <param name="root_link" value="drivetrain_link"/>
+    <param name="wrist_link" value="bucket_link"/>
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/action_states/" />
+    <param name="motion_name" value="left_excavation" />
+  </node>
+
+  <node pkg="excavaROB_action" type="left_excavation" name="left_excavation" output="screen" />
+
+
+</launch>

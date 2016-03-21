@@ -1,0 +1,21 @@
+<package>
+  <description brief="excavaROB_truck_common">
+
+     excavaROB_truck_common
+
+  </description>
+  <author>Carlos Mastalli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/excavaROB_truck_common</url>
+  <depend package="roscpp"/>
+  <depend package="truck_msgs"/>
+  <depend package="tf"/>
+
+ <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -truck_functions"/>
+ </export>
+
+</package>
+
+

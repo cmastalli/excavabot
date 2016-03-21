@@ -1,0 +1,3 @@
+<library path="lib/libdmp_controller">
+  <class name="dmp_controller/InverseKinematicsController" type="dmp_controller::InverseKinematicsController" base_class_type="pr2_controller_interface::Controller" />
+</library>

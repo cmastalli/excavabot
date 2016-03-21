@@ -1,0 +1,27 @@
+dynamic_movement_primitives:
+
+  dmp:
+    dmp_name: left_truck_loading
+
+  canonical_system:
+    alpha: 0.0 #note: if alpha = 0 then alpha will be replace by 5.25*tau/execution_time
+    tau: 6.0 #note: if tau = 0 then tau will be replace by execution_time/5.25 with alpha = 1
+
+  trajectory:
+    path_name: /home/cmastalli/ros_workspace/excavabot/motion_lib/dmp_learning/data_base/trajectories/
+    file_name: left_truck_loading.txt
+
+  transformation_systems:
+    K: 250000 #50000.0
+    D: 1000
+
+  lwr:
+    path_name: /home/cmastalli/ros_workspace/excavabot/motion_lib/dmp_learning/data_base/trajectories/
+    num_rfs: 100
+    can_sys_cutoff: 0.001
+    rfs_width_boundary: 0.35
+    exponentially_spaced: true
+
+
+  memory_path: /home/cmastalli/ros_workspace/excavabot/motion_lib/dmp_learning/data_base/dmps/
+

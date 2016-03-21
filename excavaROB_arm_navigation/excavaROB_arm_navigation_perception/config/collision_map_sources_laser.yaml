@@ -1,0 +1,10 @@
+cloud_sources:
+  - name: /right_laser/scan_cloud_filtered2
+    frame_subsample: 1
+    point_subsample: 1
+    sensor_frame: right_scan_point_link
+  - name: /left_laser/scan_cloud_filtered2
+    frame_subsample: 1
+    point_subsample: 1
+    sensor_frame: left_scan_point_link
+

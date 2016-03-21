@@ -1,0 +1,12 @@
+<launch>
+
+
+  <!-- excavaROB DMP Arm Controller: turret, boom, stick and bucket -->
+  <rosparam file="$(find dmp_controller)/launch/excavaROB_dmp_arm_controller.yaml" command="load" />
+
+  <!-- Controllers that come up started -->
+  <node name="dmp_controller_spawner" pkg="pr2_controller_manager" type="spawner"
+	output="screen" args="--wait-for=/calibrated dmp_arm_controller"  />
+
+
+</launch>

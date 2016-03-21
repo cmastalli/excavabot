@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<!-- XML namespaces -->
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+  <xacro:macro name="excavaROB_wheel_gazebo" params="side type">
+    <gazebo reference="${side}_${type}_wheel_link">
+      <mu1 value="0.25" /><!--100-->
+      <mu2 value="0.25" /><!--100-->
+      <kp  value="5.37e6" /><!--"1000000/1e13-->
+      <kd  value="2.148e4" /><!--1/5e9-->
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="excavaROB_drive_gazebo" params="name">
+    <gazebo reference="${name}_link">
+      <selfCollide>false</selfCollide>
+      <sensor type="contact" name="${name}_contact_sensor">
+        <always_on>true</always_on>
+        <update_rate>100.0</update_rate>
+        <contact>
+          <collision>${name}_link_geom</collision>
+        </contact>
+        <plugin name="${name}_gazebo_ros_bumper_controller" filename="libgazebo_ros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${name}_bumper</bumperTopicName>
+        </plugin>
+      </sensor>
+    </gazebo>
+    <gazebo reference="${name}_bellow_link">
+      <material value="PR2/Black" />
+    </gazebo>
+    <gazebo>
+      <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>${name}_link</bodyName>
+        <topicName>${name}_pose_ground_truth</topicName>
+        <gaussianNoise>0.01</gaussianNoise>
+        <frameName>map</frameName>
+        <xyzOffsets>0 0 0</xyzOffsets>
+        <rpyOffsets>0 0 0</rpyOffsets>
+      </plugin>
+      <canonicalBody>base_footprint</canonicalBody>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

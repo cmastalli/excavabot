@@ -1,0 +1,9 @@
+Header header
+string[] joint_names
+float32[] q_desired
+float32[] qd_desired
+float32[] q_actual
+float32[] qd_actual
+float32[] q_error
+float32[] qd_error
+float32[] u

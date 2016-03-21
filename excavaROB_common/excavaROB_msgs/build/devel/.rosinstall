@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/cmastalli/ros_workspace/excavabot/excavaROB_common/excavaROB_msgs/build/devel/setup.sh

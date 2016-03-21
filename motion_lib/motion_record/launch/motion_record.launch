@@ -1,0 +1,10 @@
+<launch>
+
+  <node pkg="motion_record" type="motion_record" name="excavaROB_motion_record" output="screen">
+    <param name="root_link" value="drivetrain_link" />
+    <param name="wrist_link" value="stick_link" />
+    <param name="path_name" value="/home/cmastalli/ros_workspace/excavabot/motion_lib/motion_record/data/" />
+    <param name="motion_name" value="test" />
+  </node>
+
+</launch>

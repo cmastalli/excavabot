@@ -1,0 +1,114 @@
+#include <dynamic_movement_primitives/dmp.h>
+
+#include <Eigen/Eigen>
+
+
+using namespace Eigen;
+using namespace dmp;
+
+class DMPLearning
+{
+  public:
+    DMPLearning(ros::NodeHandle& node_handle);
+
+    ~DMPLearning();
+
+    bool runLearningProcess();
+
+
+  private:
+    bool writeDMPLearned(dmp::DynamicMovementPrimitives& dmp);
+
+    ros::NodeHandle node_handle_;
+
+    Eigen::VectorXd start_pos_, end_pos_;
+
+}; //@class DMPLearning
+
+
+DMPLearning::DMPLearning(ros::NodeHandle& node_handle) :
+    node_handle_(node_handle, "dmp_learning/dynamic_movement_primitives")
+{
+}
+
+DMPLearning::~DMPLearning() 
+{
+}
+
+bool DMPLearning::runLearningProcess()
+{
+  dmp::Trajectory trajectory;
+  if (!trajectory.initialize(node_handle_)) {
+    ROS_ERROR("Could not initialize trajectory that has to learn.");
+    return false;
+  }
+ROS_INFO("1");
+  // read trajectory that was almacened
+  if (!trajectory.readFromFile()) {
+    ROS_ERROR("Could not read the trajectory.");
+    return false;
+  }
+ROS_INFO("2");
+  // get start position of the trajectory
+  double traj_dimension = trajectory.getDimension();
+  start_pos_ = VectorXd::Zero(traj_dimension);
+  if (!trajectory.getStartPosition(start_pos_)) {
+    ROS_ERROR("Could not get a start position of trajectory.");
+    return false;
+  }
+ROS_INFO("3");
+  // get end position of the trajectory
+  end_pos_ = VectorXd::Zero(traj_dimension);
+  if (!trajectory.getEndPosition(end_pos_)) {
+    ROS_ERROR("Could not get a end position of trajectory.");
+    return false;
+  }
+ROS_INFO("4");
+  // initialize the dmp
+  dmp::DynamicMovementPrimitives dmp(node_handle_);
+  if (!dmp.initialize()) {
+    ROS_ERROR("Could not initialize the DMP.");
+    return false;
+  }
+
+  // dmp learning from trajectory
+  if (!dmp.learnFromTrajectory()) {
+    ROS_ERROR("Could not learn the dmp from trajectory.");
+    return false;
+  }
+
+  if (!writeDMPLearned(dmp)) {
+    ROS_ERROR("Could not finished the learning process.");
+    return false;
+  }
+
+  return true;
+}
+
+
+bool DMPLearning::writeDMPLearned(dmp::DynamicMovementPrimitives& dmp)
+{
+  std::string memory_path;
+  if (!node_handle_.getParam("memory_path", memory_path)) {
+    ROS_ERROR("Could not write the DMP in the data base because could not get memory_path.");
+    return false;
+  }
+
+  // write the dmp learned in the data base
+  if (!dmp.writeToDisc(memory_path)) {
+    ROS_ERROR("Could not write to disc in %s.", memory_path.c_str());
+    return false;
+  }
+
+  return true;
+}
+
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv, "dmp_learning_node");
+
+  ros::NodeHandle node_handle;
+  DMPLearning dmp_learning(node_handle);
+  dmp_learning.runLearningProcess();
+}
